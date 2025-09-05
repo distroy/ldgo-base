@@ -1,0 +1,22 @@
+# git ignore
+.*
+!.gitignore
+!.gitlab-ci.yml
+!.github
+!.git-go-tool
+
+tags
+*.vim
+
+*.log
+log
+
+*.bak
+bak
+
++example
++!example/
+
+# python
+*.pyc
+__pycache__/
