@@ -1,0 +1,56 @@
+name: go
+
+on:
+  push:
+    branches:
+      - main**
+      - master**
+      - release**
+      - v**
+  pull_request:
+    branches:
+      - main**
+      - master**
+      - release**
+      - v**
+
+env:
+  GO111MODULE: on
+  TZ: Asia/Shanghai
+  WORKSPACE: "${{ github.workspace }}"
+
+jobs:
+  go-format-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.24.2"
+      - run: make setup
+      - run: |
+          git-diff-go-format
+
+  go-cognitive-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        # name: go-setup
+        with:
+          go-version: "1.24.2"
+      - run: make setup
+      - run: |
+          git-diff-go-cognitive
+
+  go-test-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.24.2"
+      - run: go mod download
+      - run: make setup
+      - run: make go-test
+      - run: git-diff-go-coverage -file log/go-coverage.out
