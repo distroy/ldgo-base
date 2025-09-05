@@ -2,7 +2,7 @@ go-coverage:
   git-diff:
     mode: all
   exclude:
-    # - '(^|/)3rd/'
+    - '(^|/)3rd/'
     - '.*/example/[^/]+\.go$'
   rate: 0.65
   top: 10
@@ -11,7 +11,7 @@ go-cognitive:
   git-diff:
     mode: all
   exclude:
-    # - '(^|/)3rd/'
+    - '(^|/)3rd/'
     # - '.*/example/[^/]+\.go$'
   over: 15
   top: 10
@@ -19,12 +19,12 @@ go-cognitive:
 go-format:
   git-diff:
     mode: all
-  # exclude:
-  #   - '(^|/)3rd/'
+  exclude:
+    - '(^|/)3rd/'
   # file-line: 1000
   # import: true
   # formated: true
-  # package: true
+  package: false
   func-input-num: 4
   # func-output-num: 3
   # func-named-output: true
