@@ -8,6 +8,11 @@ import (
 	"errors"
 )
 
+var (
+	_ Error = (*commError)(nil)
+	_ Error = (*detailsError)(nil)
+)
+
 type Error interface {
 	error
 
@@ -70,7 +75,7 @@ func New(status, code int, message string) Error {
 	}
 }
 
-func Wrap(err error, def ...Error) Error {
+func Wrap(err error, def ...Error) error {
 	if err == nil {
 		return nil
 	}
@@ -138,26 +143,21 @@ type strError string
 
 func (e strError) Error() string { return string(e) }
 
-func WithDetail(err error, details ...string) Error {
+func WithDetail(err error, details ...string) error {
 	return WithDetails(err, details)
 }
 
-func WithDetails(err error, details []string) Error {
+func WithDetails(err error, details []string) error {
+	if len(details) == 0 {
+		return err
+	}
 	t := GetDetails(err)
 
 	if len(details)+len(t) == 0 {
 		return Wrap(err)
 	}
-
-	if len(details) == 0 {
-		return &detailsError{
-			commError: commError{
-				error:  err,
-				status: GetStatus(err),
-				code:   GetCode(err),
-			},
-			details: t,
-		}
+	if e := getMatchError(err); e != nil {
+		err = e
 	}
 
 	if len(t) == 0 {

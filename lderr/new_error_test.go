@@ -128,3 +128,158 @@ func TestIs(t *testing.T) {
 		})
 	}
 }
+
+func testDetailsErrorEqual(a, b error) bool {
+	if a == b {
+		return true
+	}
+	if aa, bb := GetCode(a), GetCode(b); aa != bb {
+		return false
+	}
+	if aa, bb := GetStatus(a), GetStatus(b); aa != bb {
+		return false
+	}
+	if aa, bb := GetMessage(a), GetMessage(b); aa != bb {
+		return false
+	}
+	aa, bb := GetDetails(a), GetDetails(b)
+	if len(aa) != len(bb) {
+		return false
+	}
+	for i := range aa {
+		if aa[i] != bb[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestWithDetail(t *testing.T) {
+	equal := testDetailsErrorEqual
+
+	type args struct {
+		err     error
+		details []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want Error
+	}{
+		{
+			name: "nil",
+			args: args{
+				err:     nil,
+				details: []string{},
+			},
+			want: nil,
+		},
+		{
+			name: "nil with details",
+			args: args{
+				err: nil,
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+			want: &detailsError{
+				commError: commError{
+					error:  ErrSuccess,
+					status: ErrSuccess.Status(),
+					code:   ErrSuccess.Code(),
+				},
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+		},
+		{
+			name: "unknown",
+			args: args{
+				err:     ErrUnkown,
+				details: []string{},
+			},
+			want: ErrUnkown,
+		},
+		{
+			name: "unknown with details",
+			args: args{
+				err: ErrUnkown,
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+			want: &detailsError{
+				commError: commError{
+					error:  ErrUnkown,
+					status: ErrUnkown.Status(),
+					code:   ErrUnkown.Code(),
+				},
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+		},
+		{
+			name: "str error with details",
+			args: args{
+				err: strError("str error"),
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+			want: &detailsError{
+				commError: commError{
+					error:  strError("str error"),
+					status: ErrUnkown.Status(),
+					code:   ErrUnkown.Code(),
+				},
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+		},
+		{
+			name: "details error with details",
+			args: args{
+				err: &detailsError{
+					commError: commError{
+						error:  strError("details error"),
+						status: ErrUnkown.Status(),
+						code:   ErrUnkown.Code(),
+					},
+					details: []string{
+						"detail-0",
+					},
+				},
+				details: []string{
+					"detail-1",
+				},
+			},
+			want: &detailsError{
+				commError: commError{
+					error:  strError("details error"),
+					status: ErrUnkown.Status(),
+					code:   ErrUnkown.Code(),
+				},
+				details: []string{
+					"detail-0",
+					"detail-1",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := WithDetail(tt.args.err, tt.args.details...); !equal(got, tt.want) {
+				t.Errorf("WithDetail() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
