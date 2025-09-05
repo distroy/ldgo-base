@@ -1,0 +1,3 @@
+[submodule "git-go-tool"]
+	path = git-go-tool
+	url = https://github.com/distroy/git-go-tool.git
