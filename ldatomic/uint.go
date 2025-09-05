@@ -52,6 +52,7 @@ func (p *Uintptr) Add(delta uintptr) (new uintptr) { return atomic.AddUintptr(p.
 func (p *Uintptr) Sub(delta uintptr) (new uintptr) { return atomic.AddUintptr(p.get(), ^(delta - 1)) }
 func (p *Uintptr) Store(d uintptr)                 { atomic.StoreUintptr(p.get(), d) }
 func (p *Uintptr) Load() uintptr                   { return atomic.LoadUintptr(p.get()) }
+func (p *Uintptr) Swap(new uintptr) (old uintptr)  { return atomic.SwapUintptr(p.get(), new) }
 func (p *Uintptr) CompareAndSwap(old, new uintptr) (swapped bool) {
 	return atomic.CompareAndSwapUintptr(p.get(), old, new)
 }
@@ -69,7 +70,7 @@ func (p *Uint) Add(delta uint) (new uint) { return uint(p.get().Add(uint64(delta
 func (p *Uint) Sub(delta uint) (new uint) { return uint(p.get().Sub(uint64(delta))) }
 func (p *Uint) Store(d uint)              { p.get().Store(uint64(d)) }
 func (p *Uint) Load() uint                { return uint(p.get().Load()) }
-func (p *Uint) Swap(new int) (old uint)   { return uint(p.get().Swap(uint64(new))) }
+func (p *Uint) Swap(new uint) (old uint)  { return uint(p.get().Swap(uint64(new))) }
 func (p *Uint) CompareAndSwap(old, new uint) (swapped bool) {
 	return p.get().CompareAndSwap(uint64(old), uint64(new))
 }
@@ -87,7 +88,7 @@ func (p *Uint8) Add(delta uint8) (new uint8) { return uint8(p.get().Add(uint32(d
 func (p *Uint8) Sub(delta uint8) (new uint8) { return uint8(p.get().Sub(uint32(delta))) }
 func (p *Uint8) Store(d uint8)               { p.get().Store(uint32(d)) }
 func (p *Uint8) Load() uint8                 { return uint8(p.get().Load()) }
-func (p *Uint8) Swap(new int8) (old uint8)   { return uint8(p.get().Swap(uint32(new))) }
+func (p *Uint8) Swap(new uint8) (old uint8)  { return uint8(p.get().Swap(uint32(new))) }
 func (p *Uint8) CompareAndSwap(old, new uint8) (swapped bool) {
 	return p.get().CompareAndSwap(uint32(old), uint32(new))
 }
@@ -105,7 +106,7 @@ func (p *Uint16) Add(delta uint16) (new uint16) { return uint16(p.get().Add(uint
 func (p *Uint16) Sub(delta uint16) (new uint16) { return uint16(p.get().Sub(uint32(delta))) }
 func (p *Uint16) Store(d uint16)                { p.get().Store(uint32(d)) }
 func (p *Uint16) Load() uint16                  { return uint16(p.get().Load()) }
-func (p *Uint16) Swap(new int16) (old uint16)   { return uint16(p.get().Swap(uint32(new))) }
+func (p *Uint16) Swap(new uint16) (old uint16)  { return uint16(p.get().Swap(uint32(new))) }
 func (p *Uint16) CompareAndSwap(old, new uint16) (swapped bool) {
 	return p.get().CompareAndSwap(uint32(old), uint32(new))
 }
