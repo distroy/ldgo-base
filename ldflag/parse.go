@@ -123,21 +123,21 @@ func unquoteUsage(f *Flag) (meta string, usage string) {
 		return meta, usage
 	}
 
-	// Look for a back-quoted name, but avoid the strings package.
-	for i := 0; i < len(usage); i++ {
-		if usage[i] == '`' {
-			for j := i + 1; j < len(usage); j++ {
-				if usage[j] == '`' {
-					meta = usage[i+1 : j]
-					meta = packMeta(meta)
-
-					usage = usage[:i] + meta + usage[j+1:]
-					return meta, usage
-				}
-			}
-			break // Only one back quote; use type name.
-		}
-	}
+	// // Look for a back-quoted name, but avoid the strings package.
+	// for i := 0; i < len(usage); i++ {
+	// 	if usage[i] == '`' {
+	// 		for j := i + 1; j < len(usage); j++ {
+	// 			if usage[j] == '`' {
+	// 				meta = usage[i+1 : j]
+	// 				meta = packMeta(meta)
+	//
+	// 				usage = usage[:i] + meta + usage[j+1:]
+	// 				return meta, usage
+	// 			}
+	// 		}
+	// 		break // Only one back quote; use type name.
+	// 	}
+	// }
 
 	// No explicit name, so use type if we can find one.
 	meta = "<value>"

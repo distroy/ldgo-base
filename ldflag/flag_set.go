@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 
@@ -35,12 +36,7 @@ func (f *Flag) inOptions(s string) bool {
 	if f.Default != "" && s == f.Default {
 		return true
 	}
-	for _, v := range f.Options {
-		if v == s {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(f.Options, s)
 }
 
 type FlagSet struct {
