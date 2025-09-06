@@ -2,7 +2,7 @@
  * Copyright (C) distroy
  */
 
-package _time
+package time_
 
 import (
 	"fmt"

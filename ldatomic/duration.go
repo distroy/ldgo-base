@@ -7,7 +7,7 @@ package ldatomic
 import (
 	"time"
 
-	"github.com/distroy/ldgo-base/internal/_time"
+	"github.com/distroy/ldgo-base/internal/time_"
 )
 
 type Duration int64
@@ -34,9 +34,9 @@ func (p *Duration) Sub(delta time.Duration) (new time.Duration) {
 	return time.Duration(p.get().Sub(int64(delta)))
 }
 
-func (p Duration) MarshalJSON() ([]byte, error) { return _time.DurationMarshalJson(p.Load()) }
+func (p Duration) MarshalJSON() ([]byte, error) { return time_.DurationMarshalJson(p.Load()) }
 func (p *Duration) UnmarshalJSON(b []byte) error {
-	dur, err := _time.DurationUnmarshalJson(b)
+	dur, err := time_.DurationUnmarshalJson(b)
 	if err == nil {
 		p.Store(dur)
 	}
