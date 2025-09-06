@@ -66,8 +66,8 @@ all: go-test
 
 .PHONY: $(GO_TEST_DIRS_NAME)
 $(GO_TEST_DIRS_NAME):
-	@echo GO_TEST_DIRS: $(notdir $@)
-	$(GO) test $(GO_FLAGS) $(GO_TEST_FLAGS) ./$(notdir $@) \
+	@echo GO_TEST_DIRS: $@
+	$(GO) test $(GO_FLAGS) $(GO_TEST_FLAGS) ./$@ \
 		-coverprofile="$(GO_TEST_REPORT_DIR)/go-coverage.out"
 
 .PHONY: pb
