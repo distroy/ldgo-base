@@ -16,6 +16,9 @@ func TestNewRingBuffer(t *testing.T) {
 
 	convey.Convey(t.Name(), t, func(c convey.C) {
 		b := NewRingBuffer(16)
+		c.So(b.Cap(), convey.ShouldEqual, 16)
+		c.So(b.Closed(), convey.ShouldEqual, false)
+
 		c.Convey("new", func(c convey.C) {
 			c.So(b, convey.ShouldNotBeNil)
 			c.So(b.Size(), convey.ShouldEqual, 0)
@@ -109,6 +112,8 @@ func TestNewRingBuffer(t *testing.T) {
 			c.Convey("close", func(c convey.C) {
 				c.So(err, convey.ShouldBeNil)
 				c.So(b.Size(), convey.ShouldEqual, 10)
+
+				c.So(b.Closed(), convey.ShouldEqual, true)
 			})
 
 			n, err = b.Read(d[:5])

@@ -7,7 +7,7 @@ package ldbyte
 import (
 	"io"
 
-	"github.com/distroy/ldgo-base/internal/_buf"
+	"github.com/distroy/ldgo-base/internal/buf_"
 )
 
 var (
@@ -20,12 +20,12 @@ func NewRingBuffer(n int) *RingBuffer {
 	}
 	buf := make([]byte, n)
 	return &RingBuffer{
-		buf: _buf.NewRing(buf),
+		buf: buf_.NewRing(buf),
 	}
 }
 
 type RingBuffer struct {
-	buf *_buf.Ring[byte]
+	buf *buf_.Ring[byte]
 }
 
 func (b RingBuffer) Close() error { return b.buf.Close() }
@@ -42,13 +42,13 @@ func NewBlockingRingBuffer(n int) BlockingRingBuffer {
 		n = 1024
 	}
 	b := BlockingRingBuffer{
-		buf: _buf.NewBlockingRing(make([]byte, n)),
+		buf: buf_.NewBlockingRing(make([]byte, n)),
 	}
 	return b
 }
 
 type BlockingRingBuffer struct {
-	buf *_buf.BlockingRing[byte]
+	buf *buf_.BlockingRing[byte]
 }
 
 func (b BlockingRingBuffer) Close() error { return b.buf.Close() }

@@ -2,7 +2,7 @@
  * Copyright (C) distroy
  */
 
-package _buf
+package buf_
 
 import (
 	"io"
@@ -34,7 +34,7 @@ func TestBlockingRing(t *testing.T) {
 			}()
 		}
 		fNew := func(n int) *BlockingRing[byte] {
-			return NewBlockingRing(make([]byte, n, n))
+			return NewBlockingRing(make([]byte, n))
 		}
 		fSleep := func() { time.Sleep(10 * time.Millisecond) }
 

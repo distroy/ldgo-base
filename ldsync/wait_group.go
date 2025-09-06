@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/distroy/ldgo-base/internal/_race"
+	"github.com/distroy/ldgo-base/internal/race_"
 )
 
 // A WaitGroup waits for a collection of goroutines to finish.
@@ -47,22 +47,22 @@ func (wg *WaitGroup) Count() int {
 // new Add calls must happen after all previous Wait calls have returned.
 // See the WaitGroup example.
 func (wg *WaitGroup) Add(delta int) {
-	if _race.Enabled {
+	if race_.Enabled {
 		if delta < 0 {
 			// Synchronize decrements with Wait.
-			_race.ReleaseMerge(unsafe.Pointer(wg))
+			race_.ReleaseMerge(unsafe.Pointer(wg))
 		}
-		_race.Disable()
-		defer _race.Enable()
+		race_.Disable()
+		defer race_.Enable()
 	}
 	state := atomic.AddUint64(&wg.state, uint64(delta)<<32)
 	v := int32(state >> 32)
 	w := uint32(state)
-	if _race.Enabled && delta > 0 && v == int32(delta) {
+	if race_.Enabled && delta > 0 && v == int32(delta) {
 		// The first increment must be synchronized with Wait.
 		// Need to model this as a read, because there can be
 		// several concurrent wg.counter transitions from 0.
-		_race.Read(unsafe.Pointer(&wg.sema))
+		race_.Read(unsafe.Pointer(&wg.sema))
 	}
 	if v < 0 {
 		panic("ldsync: negative WaitGroup counter")
@@ -95,15 +95,15 @@ func (wg *WaitGroup) Done() {
 
 // Wait blocks until the WaitGroup counter is zero.
 func (wg *WaitGroup) Wait() {
-	if _race.Enabled {
-		_race.Disable()
+	if race_.Enabled {
+		race_.Disable()
 	}
 	for {
 		ok := wg.waitOnce()
 		if ok {
-			if _race.Enabled {
-				_race.Enable()
-				_race.Acquire(unsafe.Pointer(wg))
+			if race_.Enabled {
+				race_.Enable()
+				race_.Acquire(unsafe.Pointer(wg))
 			}
 			return
 		}
@@ -120,12 +120,12 @@ func (wg *WaitGroup) waitOnce() bool {
 	}
 	// Increment waiters count.
 	if atomic.CompareAndSwapUint64(&wg.state, state, state+1) {
-		if _race.Enabled && w == 0 {
+		if race_.Enabled && w == 0 {
 			// Wait must be synchronized with the first Add.
 			// Need to model this is as a write to race with the read in Add.
 			// As a consequence, can do the write only for the first waiter,
 			// otherwise concurrent Waits will race with each other.
-			_race.Write(unsafe.Pointer(&wg.sema))
+			race_.Write(unsafe.Pointer(&wg.sema))
 		}
 		runtime_Semacquire(&wg.sema)
 		if atomic.LoadUint64(&wg.state) != 0 {

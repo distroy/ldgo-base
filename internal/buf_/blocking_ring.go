@@ -2,7 +2,7 @@
  * Copyright (C) distroy
  */
 
-package _buf
+package buf_
 
 import (
 	"sync"
