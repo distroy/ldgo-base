@@ -22,9 +22,9 @@ $(info GO_VERSION: $(GO_MAJOR_VERSION).$(GO_SUB_VERSION))
 $(info GO_FLAGS: $(GO_FLAGS))
 
 # go test
-GO_TEST_DIRS+=$(shell find . -name '*_test.go' | grep -v -E 'vendor|bak' | xargs dirname | sort | uniq)
-GO_TEST_DIRS_NAME=$(notdir $(GO_TEST_DIRS))
-# $(info GO_TEST_DIRS: $(GO_TEST_DIRS_NAME))
+GO_TEST_DIRS+=$(shell find . -name '*_test.go' | grep -v -E 'vendor|bak|3rd|ggt' | xargs realpath --relative-to=. | xargs dirname | sort | uniq)
+GO_TEST_DIRS_NAME=$(GO_TEST_DIRS)
+$(info GO_TEST_DIRS: $(GO_TEST_DIRS_NAME))
 
 ifeq (${test_report},)
 	export test_report=$(PROJECT_ROOT)/log
@@ -101,7 +101,7 @@ go-test-report: go-test-report-dir
 setup:
 	git submodule init
 	git submodule update
-	git config core.hooksPath "git-go-tool/git-hook"
+	git config core.hooksPath "ggt/git-hook"
 	@$(call _go_install,github.com/distroy/git-go-tool/cmd/git-diff-go-cognitive)
 	@$(call _go_install,github.com/distroy/git-go-tool/cmd/git-diff-go-coverage)
 	@$(call _go_install,github.com/distroy/git-go-tool/cmd/git-diff-go-format)
