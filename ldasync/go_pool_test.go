@@ -40,7 +40,7 @@ func TestGoPool(t *testing.T) {
 
 			p := GoN(2, fn)
 			err := p.Wait()
-			c.So(err, convey.ShouldBeNil)
+			c.So(err, convey.ShouldNotBeNil)
 		})
 	})
 }

@@ -47,8 +47,6 @@ func (p *GoPool) GoN(n int, fn func() error) {
 
 	fnGo := func() {
 		defer func() {
-			p.wg.Done()
-
 			if err := recover(); err != nil {
 				buf := debug.Stack()
 
@@ -57,6 +55,7 @@ func (p *GoPool) GoN(n int, fn func() error) {
 				err := fmt.Errorf("go func panic. err:%v", err)
 				p.setError(err)
 			}
+			p.wg.Done()
 		}()
 
 		err := fn()
