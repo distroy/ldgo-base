@@ -25,7 +25,7 @@ go-format:
   # import: true
   # formated: true
   package: false
-  func-input-num: 4
+  func-input-num: 5
   # func-output-num: 3
   # func-named-output: true
   # func-input-num-without-context: true
