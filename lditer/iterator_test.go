@@ -18,6 +18,9 @@ type testPair[K, V any] struct {
 }
 
 func testReadSeq[T any](iter Seq[T], yield func(v T) bool) []T {
+	if yield == nil {
+		yield = func(v T) bool { return true }
+	}
 	res := make([]T, 0, 16)
 	for v := range iter {
 		if !yield(v) {
@@ -29,6 +32,9 @@ func testReadSeq[T any](iter Seq[T], yield func(v T) bool) []T {
 }
 
 func testReadSeq2[K, V any](iter Seq2[K, V], yield func(k K, v V) bool) []testPair[K, V] {
+	if yield == nil {
+		yield = func(k K, v V) bool { return true }
+	}
 	res := make([]testPair[K, V], 0, 16)
 	for k, v := range iter {
 		if !yield(k, v) {
@@ -114,6 +120,41 @@ func TestToSeq2(t *testing.T) {
 	}
 }
 
+func TestInt(t *testing.T) {
+	tests := []struct {
+		name  string
+		n     int
+		ns    []int
+		yield func(v int) bool
+		want  []int
+	}{
+		{
+			name:  "5",
+			n:     5,
+			yield: func(v int) bool { return true },
+			want:  []int{0, 1, 2, 3, 4},
+		},
+		{
+			name:  "8, 13",
+			n:     8,
+			ns:    []int{13},
+			yield: func(v int) bool { return v < 10 },
+			want:  []int{8, 9},
+		},
+	}
+
+	for i, tt := range tests {
+		name := fmt.Sprintf("%d: %s", i, tt.name)
+		t.Run(name, func(t *testing.T) {
+			got := testReadSeq(Int(tt.n, tt.ns...), tt.yield)
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TestInt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestSlice(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -135,7 +176,7 @@ func TestSlice(t *testing.T) {
 			got := testReadSeq2(Slice(tt.slice), tt.yield)
 
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("TestSlice2() = %v, want %v", got, tt.want)
+				t.Errorf("TestSlice() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -274,6 +315,32 @@ func TestToSeqByValue(t *testing.T) {
 
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("TestToSeqByValue() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestString(t *testing.T) {
+	tests := []struct {
+		arg   string
+		yield func(i int, v rune) bool
+		want  []testPair[int, rune]
+	}{
+		{
+			arg:  "abcde",
+			want: []testPair[int, rune]{{0, 'a'}, {1, 'b'}, {2, 'c'}, {3, 'd'}, {4, 'e'}},
+		},
+		{
+			arg:   "abcdefg",
+			yield: func(i int, v rune) bool { return v < 'd' },
+			want:  []testPair[int, rune]{{0, 'a'}, {1, 'b'}, {2, 'c'}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.arg, func(t *testing.T) {
+			got := testReadSeq2(String(tt.arg), tt.yield)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("String() = %v, want %v", got, tt.want)
 			}
 		})
 	}
