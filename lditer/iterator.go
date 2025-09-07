@@ -13,6 +13,11 @@ type (
 	Seq2[K, V any] = iter.Seq2[K, V]
 )
 
+type Integer interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
 func ToSeq2[Seq ~func(yield func(V) bool), V any](fn Seq) Seq2[int, V] {
 	return func(yield func(i int, v V) bool) {
 		x := 0
@@ -46,6 +51,24 @@ func Chan[C interface{ ~<-chan V | ~chan V }, V any](ch C) Seq[V] {
 	}
 }
 
+// Int(n) return [0, n)
+// Int(b, e) return [0, n)
+func Int[T Integer](n T, ns ...T) Seq[T] {
+	b := T(0)
+	e := n
+	if len(ns) > 0 {
+		b = n
+		e = ns[0]
+	}
+	return func(yield func(T) bool) {
+		for i := b; i < e; i++ {
+			if !yield(i) {
+				break
+			}
+		}
+	}
+}
+
 func Slice[S ~[]V, V any](s S) Seq2[int, V] {
 	return func(yield func(int, V) bool) {
 		for i, v := range s {
@@ -60,7 +83,7 @@ func SliceBackward[S ~[]V, V any](s S) Seq2[int, V] {
 	return func(yield func(int, V) bool) {
 		for i := len(s) - 1; i >= 0; i-- {
 			if !yield(i, s[i]) {
-				return
+				break
 			}
 		}
 	}
@@ -70,6 +93,16 @@ func Map[M ~map[K]V, K comparable, V any](m M) Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for k, v := range m {
 			if !yield(k, v) {
+				break
+			}
+		}
+	}
+}
+
+func String[S ~string](s S) Seq2[int, rune] {
+	return func(yield func(int, rune) bool) {
+		for i, v := range s {
+			if !yield(i, v) {
 				break
 			}
 		}
