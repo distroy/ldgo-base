@@ -12,20 +12,25 @@ func newInt(status, code int, message string) Error {
 
 func newIntByErr(status, code int, message error) Error {
 	err := intError(code)
-	if _, ok := intErrors[err]; !ok {
-		intErrors[err] = commError{
-			error:  message,
-			status: status,
-			code:   code,
-		}
-		return err
+	intErrors[err] = commError{
+		error:  message,
+		status: status,
+		code:   code,
 	}
 	return err
+	// if _, ok := intErrors[err]; !ok {
+	// 	return err
+	// }
+	// return commError{
+	// 	error:  message,
+	// 	status: status,
+	// 	code:   code,
+	// }
 }
 
 type intError int
 
-func (e intError) err() Error {
+func (e intError) err() commError {
 	err, ok := intErrors[e]
 	if ok {
 		return err
@@ -37,11 +42,10 @@ func (e intError) err() Error {
 	}
 }
 
-func (e intError) Code() int         { return int(e) }
-func (e intError) Details() []string { return nil }
-func (e intError) Error() string     { return e.err().Error() }
-func (e intError) Status() int       { return e.err().Status() }
-func (e intError) Unwrap() error     { return e.err() }
+func (e intError) Code() int     { return int(e) }
+func (e intError) Error() string { return e.err().Error() }
+func (e intError) Status() int   { return e.err().Status() }
+func (e intError) Unwrap() error { return e.err() }
 func (e intError) Is(target error) bool {
 	if err, _ := target.(interface{ Code() int }); err != nil && e.Code() == err.Code() {
 		return true

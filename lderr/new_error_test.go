@@ -164,7 +164,7 @@ func TestWithDetail(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want Error
+		want error
 	}{
 		{
 			name: "nil",
@@ -184,7 +184,7 @@ func TestWithDetail(t *testing.T) {
 				},
 			},
 			want: &detailsError{
-				commError: commError{
+				error: commError{
 					error:  ErrSuccess,
 					status: ErrSuccess.Status(),
 					code:   ErrSuccess.Code(),
@@ -213,7 +213,7 @@ func TestWithDetail(t *testing.T) {
 				},
 			},
 			want: &detailsError{
-				commError: commError{
+				error: commError{
 					error:  ErrUnkown,
 					status: ErrUnkown.Status(),
 					code:   ErrUnkown.Code(),
@@ -234,7 +234,7 @@ func TestWithDetail(t *testing.T) {
 				},
 			},
 			want: &detailsError{
-				commError: commError{
+				error: commError{
 					error:  strError("str error"),
 					status: ErrUnkown.Status(),
 					code:   ErrUnkown.Code(),
@@ -249,7 +249,7 @@ func TestWithDetail(t *testing.T) {
 			name: "details error with details",
 			args: args{
 				err: &detailsError{
-					commError: commError{
+					error: commError{
 						error:  strError("details error"),
 						status: ErrUnkown.Status(),
 						code:   ErrUnkown.Code(),
@@ -263,7 +263,7 @@ func TestWithDetail(t *testing.T) {
 				},
 			},
 			want: &detailsError{
-				commError: commError{
+				error: commError{
 					error:  strError("details error"),
 					status: ErrUnkown.Status(),
 					code:   ErrUnkown.Code(),
