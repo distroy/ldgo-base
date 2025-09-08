@@ -929,7 +929,7 @@ func TestAttrFunc(t *testing.T) {
 			err := json.Unmarshal(s2b(s), &m)
 			c.So(err, convey.ShouldBeNil)
 			c.So(len(m.Key), convey.ShouldBeGreaterThan, 0)
-			c.So(m.Key[0], convey.ShouldContainSubstring, "ldgo/ldlog/internal/_attr/attr_test.go:924")
+			c.So(m.Key[0], convey.ShouldContainSubstring, "ldgo-base/ldlog/internal/attr__/attr_test.go:924")
 			fmt.Printf("%s", s)
 		})
 	})
