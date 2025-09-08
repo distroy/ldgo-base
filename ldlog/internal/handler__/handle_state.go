@@ -87,6 +87,7 @@ func (s *handleState) appendAttrs(as []Attr) bool {
 	for _, a := range as {
 		switch a.Key {
 		case LevelKey:
+			// log.Printf(" === key:%s, value:%v, type:%T", a.Key, a.Value.Any(), a.Value.Any())
 			s.h.opts.Level = asType(a.Value.Any(), s.h.opts.Level)
 
 		case CallerKey:

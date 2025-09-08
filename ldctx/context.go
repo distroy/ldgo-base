@@ -46,6 +46,9 @@ func GetError(c context.Context) error {
 }
 
 func WithLogger(c context.Context, log *ldlog.Logger, attrs ...ldlog.Attr) context.Context {
+	if c == nil {
+		c = Default()
+	}
 	if log == nil {
 		return WithLogAttrs(c, attrs...)
 	}
