@@ -14,7 +14,7 @@ import (
 	"github.com/distroy/ldgo-base/lderr"
 )
 
-func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cfg ...*CopyConfig) error) {
+func testDeepCopyFunc(t *testing.T, copyFunc func(target, source any, cfg ...*CopyConfig) error) {
 	convey.Convey(t.Name(), t, func(c convey.C) {
 		c.Convey("int to int", func(c convey.C) {
 			var (
@@ -92,11 +92,11 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			})
 		})
 
-		c.Convey("to *interface{}", func(c convey.C) {
-			c.Convey("nil to *interface{}", func(c convey.C) {
+		c.Convey("to *any", func(c convey.C) {
+			c.Convey("nil to *any", func(c convey.C) {
 				var (
-					target interface{}
-					source interface{}
+					target any
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -104,9 +104,9 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.So(target, convey.ShouldEqual, nil)
 			})
 
-			c.Convey("int to *interface{}", func(c convey.C) {
+			c.Convey("int to *any", func(c convey.C) {
 				var (
-					target interface{}
+					target any
 					source int = 100
 				)
 
@@ -115,9 +115,9 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.So(target, convey.ShouldEqual, source)
 			})
 
-			c.Convey("*int to *interface{}", func(c convey.C) {
+			c.Convey("*int to *any", func(c convey.C) {
 				var (
-					target interface{}
+					target any
 					source *int = new(int)
 				)
 				*source = 100
@@ -128,9 +128,9 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.So(target, convey.ShouldResemble, source)
 			})
 
-			c.Convey("**int to *interface{}", func(c convey.C) {
+			c.Convey("**int to *any", func(c convey.C) {
 				var (
-					target interface{}
+					target any
 					xxxx0  int   = 100
 					xxxx1  *int  = &xxxx0
 					source **int = &xxxx1
@@ -181,7 +181,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to **int", func(c convey.C) {
 				var (
 					target *int
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -216,7 +216,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("func to *string", func(c convey.C) {
 				var (
 					target string
-					source func(interface{}) bool = IsZero
+					source func(any) bool = IsZero
 				)
 
 				err := copyFunc(&target, source)
@@ -228,7 +228,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("func to unsafe.Pointer", func(c convey.C) {
 				var (
 					target unsafe.Pointer
-					source func(interface{}) bool = IsZero
+					source func(any) bool = IsZero
 				)
 
 				err := copyFunc(&target, source)
@@ -240,7 +240,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to *bool", func(c convey.C) {
 				var (
 					target bool
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -295,7 +295,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.Convey("nil to *int", func(c convey.C) {
 					var (
 						target int
-						source interface{}
+						source any
 					)
 
 					err := copyFunc(&target, source)
@@ -351,7 +351,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.Convey("nil to *uint", func(c convey.C) {
 					var (
 						target uint
-						source interface{}
+						source any
 					)
 
 					err := copyFunc(&target, source)
@@ -407,7 +407,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.Convey("nil to *float64", func(c convey.C) {
 					var (
 						target float64
-						source interface{}
+						source any
 					)
 
 					err := copyFunc(&target, source)
@@ -463,7 +463,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.Convey("nil to *complex128", func(c convey.C) {
 					var (
 						target complex128
-						source interface{}
+						source any
 					)
 
 					err := copyFunc(&target, source)
@@ -521,7 +521,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to *string", func(c convey.C) {
 				var (
 					target string
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -687,7 +687,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to *map[int64]string", func(c convey.C) {
 				var (
 					target map[int64]string
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -695,9 +695,9 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 				c.So(target, convey.ShouldBeNil)
 			})
 
-			c.Convey("map[int]string to *map[interface{}]interface{}", func(c convey.C) {
+			c.Convey("map[int]string to *map[any]any", func(c convey.C) {
 				var (
-					target map[interface{}]interface{}
+					target map[any]any
 					source map[int]string = map[int]string{
 						1: "abc",
 						2: "xyz",
@@ -706,7 +706,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 
 				err := copyFunc(&target, source)
 				c.So(err, convey.ShouldBeNil)
-				c.So(target, convey.ShouldResemble, map[interface{}]interface{}{
+				c.So(target, convey.ShouldResemble, map[any]any{
 					1: "abc",
 					2: "xyz",
 				})
@@ -793,7 +793,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to *[]string", func(c convey.C) {
 				var (
 					target []string
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -804,7 +804,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to *[2]string", func(c convey.C) {
 				var (
 					target [2]string
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
@@ -853,7 +853,7 @@ func testDeepCopyFunc(t *testing.T, copyFunc func(target, source interface{}, cf
 			c.Convey("nil to *struct", func(c convey.C) {
 				var (
 					target testCopyStruct
-					source interface{}
+					source any
 				)
 
 				err := copyFunc(&target, source)
