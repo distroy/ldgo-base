@@ -24,9 +24,9 @@ func newCore(h Handler) core {
 }
 
 type core struct {
-	handler   logHandler
-	enabler   Enabler
-	stackSkip int
+	handler    logHandler
+	enabler    Enabler
+	callerSkip int
 }
 
 func (l *core) Enabler() Enabler { return l.enabler }
@@ -58,7 +58,7 @@ func (l *core) enabled(c context.Context, lvl Level, skip int) bool {
 func (l *core) getCaller(skip int) uintptr {
 	var pcs [1]uintptr
 	// skip [runtime.Callers, this function, this function's caller]
-	runtime.Callers(skip+2+l.stackSkip, pcs[:])
+	runtime.Callers(skip+2+l.callerSkip, pcs[:])
 	return pcs[0]
 }
 

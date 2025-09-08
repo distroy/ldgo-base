@@ -18,5 +18,5 @@ func SetLevel(lvl Level) Option   { return func(l *core) { l.withAttrs(Any(GetLe
 func SetEnabler(e Enabler) Option { return func(l *core) { l.enabler = e } }
 func SetSequence(s string) Option { return func(l *core) { l.withAttrs(String(GetSequenceKey(), s)) } }
 
-func EnableCaller(e bool) Option    { return func(l *core) { l.withAttrs(Bool(GetCallerKey(), e)) } }
-func AddStackSkip(delta int) Option { return func(l *core) { l.stackSkip += delta } }
+func EnableCaller(e bool) Option     { return func(l *core) { l.withAttrs(Bool(GetCallerKey(), e)) } }
+func AddCallerSkip(delta int) Option { return func(l *core) { l.callerSkip += delta } }
