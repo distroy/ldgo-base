@@ -35,10 +35,10 @@ type stringer interface {
 	String() string
 }
 
-//go:linkname logFmt github.com/distroy/ldgo/v3/ldlog.logFmt
+//go:linkname logFmt github.com/distroy/ldgo-base/ldlog.logFmt
 func logFmt(l *ldlog.Logger, lvl ldlog.Level, skip int, fmt string, args ...any)
 
-//go:linkname logAttrs github.com/distroy/ldgo/v3/ldlog.logAttrs
+//go:linkname logAttrs github.com/distroy/ldgo-base/ldlog.logAttrs
 func logAttrs(l *ldlog.Logger, lvl ldlog.Level, skip int, msg string, args ...ldlog.Attr)
 
 func ctxLogFmt(c Context, lvl ldlog.Level, fmt string, args ...any) {
@@ -51,6 +51,7 @@ func ctxLogAttr(c Context, lvl ldlog.Level, msg string, args ...ldlog.Attr) {
 }
 
 const (
+	lvlT = ldlog.LevelTrace
 	lvlD = ldlog.LevelDebug
 	lvlI = ldlog.LevelInfo
 	lvlW = ldlog.LevelWarn
@@ -64,12 +65,14 @@ func format(format string, args ...any) {
 	}
 }
 
-func LogD(c Context, msg string, fields ...ldlog.Attr) { ctxLogAttr(c, lvlD, msg, fields...) }
-func LogI(c Context, msg string, fields ...ldlog.Attr) { ctxLogAttr(c, lvlI, msg, fields...) }
-func LogW(c Context, msg string, fields ...ldlog.Attr) { ctxLogAttr(c, lvlW, msg, fields...) }
-func LogE(c Context, msg string, fields ...ldlog.Attr) { ctxLogAttr(c, lvlE, msg, fields...) }
-func LogP(c Context, msg string, fields ...ldlog.Attr) { ctxLogAttr(c, lvlP, msg, fields...) }
+func LogT(c Context, msg string, attrs ...ldlog.Attr) { ctxLogAttr(c, lvlT, msg, attrs...) }
+func LogD(c Context, msg string, attrs ...ldlog.Attr) { ctxLogAttr(c, lvlD, msg, attrs...) }
+func LogI(c Context, msg string, attrs ...ldlog.Attr) { ctxLogAttr(c, lvlI, msg, attrs...) }
+func LogW(c Context, msg string, attrs ...ldlog.Attr) { ctxLogAttr(c, lvlW, msg, attrs...) }
+func LogE(c Context, msg string, attrs ...ldlog.Attr) { ctxLogAttr(c, lvlE, msg, attrs...) }
+func LogP(c Context, msg string, attrs ...ldlog.Attr) { ctxLogAttr(c, lvlP, msg, attrs...) }
 
+func LogTf(c Context, fmt string, args ...any) { ctxLogFmt(c, lvlT, fmt, args...) }
 func LogDf(c Context, fmt string, args ...any) { ctxLogFmt(c, lvlD, fmt, args...) }
 func LogIf(c Context, fmt string, args ...any) { ctxLogFmt(c, lvlI, fmt, args...) }
 func LogWf(c Context, fmt string, args ...any) { ctxLogFmt(c, lvlW, fmt, args...) }

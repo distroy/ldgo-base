@@ -73,9 +73,9 @@ func (l *Logger) Errorln(args ...any) { l.logln(nil, lvlE, 1, args...) }
 func (l *Logger) Panicln(args ...any) { l.logln(nil, lvlP, 1, args...) }
 
 func logFmt(l *Logger, lvl Level, skip int, fmt string, args ...any) {
-	l.logFmt(nil, lvl, skip, fmt, args...)
+	l.logFmt(nil, lvl, skip+1, fmt, args...)
 }
 
 func logAttrs(l *Logger, lvl Level, skip int, msg string, args ...Attr) {
-	l.logAttrs(nil, lvl, skip, msg, args...)
+	l.logAttrs(nil, lvl, skip+1, msg, args...)
 }

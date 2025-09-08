@@ -14,9 +14,11 @@ func GetSequenceKey() string    { return handler__.SequenceKey }
 
 type Option func(l *core)
 
-func SetLevel(lvl Level) Option   { return func(l *core) { l.withAttrs(Any(GetLevelKey(), lvl)) } }
-func SetEnabler(e Enabler) Option { return func(l *core) { l.enabler = e } }
-func SetSequence(s string) Option { return func(l *core) { l.withAttrs(String(GetSequenceKey(), s)) } }
+func optAttr(key string, val any) Attr { return Reflect(key, val) }
 
-func EnableCaller(e bool) Option     { return func(l *core) { l.withAttrs(Bool(GetCallerKey(), e)) } }
+func SetLevel(lvl Level) Option   { return func(l *core) { l.withAttrs(optAttr(GetLevelKey(), lvl)) } }
+func SetEnabler(e Enabler) Option { return func(l *core) { l.enabler = e } }
+func SetSequence(s string) Option { return func(l *core) { l.withAttrs(optAttr(GetSequenceKey(), s)) } }
+
+func EnableCaller(e bool) Option     { return func(l *core) { l.withAttrs(optAttr(GetCallerKey(), e)) } }
 func AddCallerSkip(delta int) Option { return func(l *core) { l.callerSkip += delta } }
