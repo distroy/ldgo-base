@@ -24,6 +24,7 @@ $(info GO_FLAGS: $(GO_FLAGS))
 # go test
 GO_TEST_DIRS+=$(shell find . -name '*_test.go' | grep -v -E 'vendor|bak|3rd|ggt' | xargs realpath --relative-to=. | xargs dirname | sort | uniq)
 $(info GO_TEST_DIRS: $(GO_TEST_DIRS))
+# $(info GO_TEST_DIRS 2: $(GO_TEST_DIRS:%=%/...))
 
 ifeq (${test_report},)
 	export test_report=$(PROJECT_ROOT)/log
@@ -66,7 +67,7 @@ all: go-test
 .PHONY: $(GO_TEST_DIRS)
 $(GO_TEST_DIRS): go-test-report-dir
 	@echo GO_TEST_DIRS: $@
-	$(GO) test $(GO_FLAGS) $(GO_TEST_FLAGS) ./$@ \
+	$(GO) test $(GO_FLAGS) $(GO_TEST_FLAGS) ./$@/... \
 		-coverprofile="$(GO_TEST_REPORT_DIR)/go-coverage.out"
 	$(GO) tool cover -html $(GO_TEST_REPORT_DIR)/go-coverage.out \
 		-o $(GO_TEST_REPORT_DIR)/go-coverage.html
