@@ -15,8 +15,8 @@ log
 *.bak
 bak
 
-+example
-+!example/
+example
+!example/
 
 # python
 *.pyc
