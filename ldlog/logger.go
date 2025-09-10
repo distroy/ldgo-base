@@ -5,6 +5,7 @@
 package ldlog
 
 const (
+	lvlT = LevelTrace
 	lvlD = LevelDebug
 	lvlI = LevelInfo
 	lvlW = LevelWarn
@@ -54,18 +55,21 @@ func (l *Logger) WithOptions(opts ...Option) *Logger {
 	return l
 }
 
+func (l *Logger) Trace(msg string, attrs ...Attr) { l.logAttrs(nil, lvlT, 1, msg, attrs...) }
 func (l *Logger) Debug(msg string, attrs ...Attr) { l.logAttrs(nil, lvlD, 1, msg, attrs...) }
 func (l *Logger) Info(msg string, attrs ...Attr)  { l.logAttrs(nil, lvlI, 1, msg, attrs...) }
 func (l *Logger) Warn(msg string, attrs ...Attr)  { l.logAttrs(nil, lvlW, 1, msg, attrs...) }
 func (l *Logger) Error(msg string, attrs ...Attr) { l.logAttrs(nil, lvlE, 1, msg, attrs...) }
 func (l *Logger) Panic(msg string, attrs ...Attr) { l.logAttrs(nil, lvlP, 1, msg, attrs...) }
 
+func (l *Logger) Tracef(fmt string, args ...any) { l.logFmt(nil, lvlT, 1, fmt, args...) }
 func (l *Logger) Debugf(fmt string, args ...any) { l.logFmt(nil, lvlD, 1, fmt, args...) }
 func (l *Logger) Infof(fmt string, args ...any)  { l.logFmt(nil, lvlI, 1, fmt, args...) }
 func (l *Logger) Warnf(fmt string, args ...any)  { l.logFmt(nil, lvlW, 1, fmt, args...) }
 func (l *Logger) Errorf(fmt string, args ...any) { l.logFmt(nil, lvlE, 1, fmt, args...) }
 func (l *Logger) Panicf(fmt string, args ...any) { l.logFmt(nil, lvlP, 1, fmt, args...) }
 
+func (l *Logger) Traceln(args ...any) { l.logln(nil, lvlT, 1, args...) }
 func (l *Logger) Debugln(args ...any) { l.logln(nil, lvlD, 1, args...) }
 func (l *Logger) Infoln(args ...any)  { l.logln(nil, lvlI, 1, args...) }
 func (l *Logger) Warnln(args ...any)  { l.logln(nil, lvlW, 1, args...) }

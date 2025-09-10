@@ -32,9 +32,9 @@ func TestLogger(t *testing.T) {
 		type LoggerValue struct {
 			Name string
 		}
-
 		writer := bytes.NewBuffer(nil)
 		l := testNewLogger(writer)
+		l = l.WithOptions(SetLevel(LevelTrace))
 		l = l.With(String("abc", "xxx"))
 
 		c.Convey("error", func(c convey.C) {
@@ -87,6 +87,20 @@ func TestLogger(t *testing.T) {
 			l.Errorf("errorf message. int:%d", 1234)
 			c.So(writer.String(), convey.ShouldEqual,
 				"2021-08-22T13:30:58.000+0800|ERROR|-|ldlog/logger_test.go:87|errorf message. int:1234,abc=xxx\n")
+		})
+
+		c.Convey("trace", func(c convey.C) {
+			type Object struct {
+				Int int    `json:"int"`
+				Str string `json:"str"`
+			}
+			obj := &Object{
+				Int: 123,
+				Str: "abc",
+			}
+			l.Trace("error message", Reflect("obj", obj))
+			c.So(writer.String(), convey.ShouldEqual,
+				`2021-08-22T13:30:58.000+0800|TRACE|-|ldlog/logger_test.go:101|error message,abc=xxx|obj={"int":123,"str":"abc"}`+"\n")
 		})
 	})
 }

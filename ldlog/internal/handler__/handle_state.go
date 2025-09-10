@@ -219,7 +219,8 @@ func (s *handleState) appendValue(v Value) {
 	if s.h.json {
 		err = appendJSONValue(s, v)
 	} else {
-		err = appendTextValue(s, v)
+		// err = appendTextValue(s, v)
+		err = appendJSONValue(s, v)
 	}
 	// err := appendTextValue(s, v)
 	if err != nil {
