@@ -26,7 +26,7 @@ func getCode(err error) (int, bool) {
 		if e := getMatchError(err); e != nil {
 			return e.Code(), true
 		}
-		if x, ok := err.(interface{ Code() int }); ok {
+		if x, ok := err.(codeIface); ok {
 			return x.Code(), true
 		}
 		return 0, false
@@ -41,12 +41,12 @@ func unwrap[T any](err error, get func(err error) (T, bool)) (T, bool) {
 		}
 
 		switch x := err.(type) {
-		case interface{ Unwrap() error }:
+		case unwrapIface:
 			err = x.Unwrap()
 			if err == nil {
 				return zero(), false
 			}
-		case interface{ Unwrap() []error }:
+		case unwrapsIface:
 			for _, err := range x.Unwrap() {
 				r, ok := get(err)
 				if ok {
@@ -77,7 +77,7 @@ func getStatus(err error) (int, bool) {
 		if e := getMatchError(err); e != nil {
 			return e.Status(), true
 		}
-		if x, ok := err.(interface{ Status() int }); ok {
+		if x, ok := err.(statusIface); ok {
 			return x.Status(), true
 		}
 		return 0, false
@@ -101,11 +101,27 @@ func GetDetails(err error) []string {
 func getDetails(err error) ([]string, bool) {
 	return unwrap(err, func(err error) ([]string, bool) {
 		switch v := err.(type) {
-		case interface{ Details() []string }:
+		case detailsIface:
 			return v.Details(), true
 
-		case interface{ Detail() string }:
+		case detailIface:
 			return []string{v.Detail()}, true
+		}
+		return nil, false
+	})
+}
+
+func GetExtra(err error) map[string]string {
+	if err == nil {
+		return nil
+	}
+	r, _ := getExtra(err)
+	return r
+}
+func getExtra(err error) (map[string]string, bool) {
+	return unwrap(err, func(err error) (map[string]string, bool) {
+		if x, ok := err.(extraIface); ok {
+			return x.Extra(), true
 		}
 		return nil, false
 	})
