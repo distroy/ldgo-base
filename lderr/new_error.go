@@ -6,18 +6,38 @@ package lderr
 
 import (
 	"errors"
+	"maps"
+)
+
+type (
+	isIface = interface{ Is(error) bool }
+
+	unwrapIface  = interface{ Unwrap() error }
+	unwrapsIface = interface{ Unwrap() []error }
+
+	codeIface   = interface{ Code() int }
+	statusIface = interface{ Status() int }
+
+	detailsIface = interface{ Details() []string }
+	detailIface  = interface{ Detail() string }
+
+	extraIface = interface{ Extra() map[string]string }
 )
 
 var (
-	_ Error                       = (*commError)(nil)
-	_ interface{ Code() int }     = (*commError)(nil)
-	_ interface{ Status() int }   = (*commError)(nil)
-	_ interface{ Unwrap() error } = (*commError)(nil)
-	_ interface{ Is(error) bool } = (*commError)(nil)
+	_ Error       = (*commError)(nil)
+	_ isIface     = (*commError)(nil)
+	_ codeIface   = (*commError)(nil)
+	_ statusIface = (*commError)(nil)
+	_ unwrapIface = (*commError)(nil)
 
-	_ error                           = (*detailsError)(nil)
-	_ interface{ Details() []string } = (*detailsError)(nil)
-	_ interface{ Unwrap() error }     = (*detailsError)(nil)
+	_ error        = (*detailsError)(nil)
+	_ detailsIface = (*detailsError)(nil)
+	_ unwrapIface  = (*detailsError)(nil)
+
+	_ error       = (*extraError)(nil)
+	_ extraIface  = (*extraError)(nil)
+	_ unwrapIface = (*extraError)(nil)
 )
 
 type Error interface {
@@ -150,7 +170,7 @@ func (e commError) Status() int   { return e.status }
 func (e commError) Code() int     { return e.code }
 func (e commError) Unwrap() error { return e.error }
 func (e commError) Is(target error) bool {
-	if err, _ := target.(interface{ Code() int }); err != nil && e.Code() == err.Code() {
+	if err, _ := target.(codeIface); err != nil && e.Code() == err.Code() {
 		return true
 	}
 	return false
@@ -202,3 +222,33 @@ type detailsError struct {
 
 func (e *detailsError) Details() []string { return e.details }
 func (e *detailsError) Unwrap() error     { return e.error }
+
+func WithExtra(err error, extra map[string]string) error {
+	if len(extra) == 0 {
+		return err
+	}
+	if err == nil {
+		err = ErrSuccess
+	}
+	m := GetExtra(err)
+	if len(m) != 0 {
+		x := make(map[string]string, len(extra)+len(m))
+		maps.Copy(x, m)
+		maps.Copy(x, extra)
+		extra = m
+	}
+
+	return &extraError{
+		error: err,
+		extra: extra,
+	}
+}
+
+type extraError struct {
+	error
+
+	extra map[string]string
+}
+
+func (e *extraError) Extra() map[string]string { return e.extra }
+func (e *extraError) Unwrap() error            { return e.error }
