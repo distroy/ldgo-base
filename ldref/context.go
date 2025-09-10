@@ -48,13 +48,12 @@ func (c *context) Error() error {
 		return nil
 	}
 
-	err := lderr.ErrReflectError
-	err = lderr.New(err.Status(), err.Code(), c.errors[0])
+	err := lderr.Override(lderr.ErrReflectError, c.errors[0])
 	return lderr.WithDetails(err, c.errors)
 }
 
 // AddErrorf formats according to a format specifier.
-func (c *context) AddErrorf(format string, args ...interface{}) {
+func (c *context) AddErrorf(format string, args ...any) {
 	text := fmt.Sprintf(format, args...)
 	c.AddError(text)
 }
