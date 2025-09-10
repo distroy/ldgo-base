@@ -10,6 +10,11 @@ type Wrapper struct {
 
 func (l *Wrapper) Logger() *Logger { return (*Logger)(l) }
 
+func (l *Wrapper) Tracef(fmt string, args ...any)   { l.logFmt(nil, lvlT, 1, fmt, args...) }
+func (l *Wrapper) Trace(args ...any)                { l.logln(nil, lvlT, 1, args) }
+func (l *Wrapper) Traceln(args ...any)              { l.logln(nil, lvlT, 1, args) }
+func (l *Wrapper) Tracez(msg string, attrs ...Attr) { l.logAttrs(nil, lvlT, 1, msg, attrs...) }
+
 func (l *Wrapper) Debugf(fmt string, args ...any)   { l.logFmt(nil, lvlD, 1, fmt, args...) }
 func (l *Wrapper) Debug(args ...any)                { l.logln(nil, lvlD, 1, args) }
 func (l *Wrapper) Debugln(args ...any)              { l.logln(nil, lvlD, 1, args) }
