@@ -52,17 +52,24 @@ func Chan[C interface{ ~<-chan V | ~chan V }, V any](ch C) Seq[V] {
 }
 
 // Int(n) return [0, n)
-// Int(b, e) return [0, n)
+// Int(begin, end) return [begin, end)
+// Int(begin, end, step) return [begin, end) by step
 func Int[T Integer](n T, ns ...T) Seq[T] {
-	b := T(0)
-	e := n
+	var (
+		begin = T(0)
+		end   = n
+		step  = T(1)
+	)
 	if len(ns) > 0 {
-		b = n
-		e = ns[0]
+		begin = n
+		end = ns[0]
+	}
+	if len(ns) > 1 {
+		step = ns[1]
 	}
 	return func(yield func(T) bool) {
-		for i := b; i < e; i++ {
-			if !yield(i) {
+		for v := begin; v < end; v += step {
+			if !yield(v) {
 				break
 			}
 		}

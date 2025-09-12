@@ -141,6 +141,13 @@ func TestInt(t *testing.T) {
 			yield: func(v int) bool { return v < 10 },
 			want:  []int{8, 9},
 		},
+		{
+			name:  "3, 13, 2",
+			n:     3,
+			ns:    []int{13, 2},
+			yield: func(v int) bool { return v < 10 },
+			want:  []int{3, 5, 7, 9},
+		},
 	}
 
 	for i, tt := range tests {
