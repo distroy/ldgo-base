@@ -60,10 +60,13 @@ func (b *Buffer) TrimNewline() {
 
 func (b *Buffer) Reset() { b.SetLen(0) }
 
+func (b *Buffer) WriteDuration(d time.Duration) (int, error) {
+	l0 := len(*b)
+	b.AppendDuration(d)
+	l1 := len(*b)
+	return l1 - l0, nil
+}
 func (b *Buffer) WriteTime(t time.Time, layout string) (int, error) {
-	if layout == "" {
-		layout = TimeLayout
-	}
 	l0 := len(*b)
 	b.AppendTime(t, layout)
 	l1 := len(*b)
@@ -114,6 +117,7 @@ func (b *Buffer) AppendComplex(v complex128, bitSize int) {
 	*b = append(*b, s...)
 }
 
+func (b *Buffer) AppendDuration(d time.Duration) { *b = append(*b, d.String()...) }
 func (b *Buffer) AppendTime(t time.Time, layout string) {
 	if layout == "" {
 		layout = TimeLayout

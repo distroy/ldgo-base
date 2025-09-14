@@ -153,7 +153,8 @@ func appendTextValue(s *handleState, v Value) error {
 	case KindString:
 		s.appendString(v.String())
 	case KindTime:
-		s.appendTime(v.Time())
+		s.buf.AppendTime(v.Time(), "")
+		// s.appendTime(v.Time())
 	case KindAny:
 		vv := v.DirectlyAny()
 		switch m := vv.(type) {
@@ -195,46 +196,51 @@ func byteSlice(a any) ([]byte, bool) {
 	return nil, false
 }
 
-// //go:linkname appendJSONValue log/slog.appendJSONValue
-// func appendJSONValue(s *handleState, v Value) error
-
 func appendJSONValue(s *handleState, v Value) error {
 	switch v.Kind() {
 	case KindString:
 		s.appendString(v.String())
 	case KindInt64:
-		*s.buf = strconv.AppendInt(*s.buf, v.Int64(), 10)
+		s.buf.AppendInt(v.Int64())
+		// *s.buf = strconv.AppendInt(*s.buf, v.Int64(), 10)
 	case KindUint64:
-		*s.buf = strconv.AppendUint(*s.buf, v.Uint64(), 10)
+		s.buf.AppendUint(v.Uint64())
+		// *s.buf = strconv.AppendUint(*s.buf, v.Uint64(), 10)
 	case KindFloat64:
 		// json.Marshal is funny about floats; it doesn't
 		// always match strconv.AppendFloat. So just call it.
 		// That's expensive, but floats are rare.
-		if err := appendJSONMarshal(s.buf, v.Float64()); err != nil {
-			return err
-		}
+		s.buf.AppendFloat(v.Float64(), 64)
 	case KindBool:
-		*s.buf = strconv.AppendBool(*s.buf, v.Bool())
+		s.buf.AppendBool(v.Bool())
 	case KindDuration:
 		// Do what json.Marshal does.
-		*s.buf = strconv.AppendInt(*s.buf, int64(v.Duration()), 10)
+		s.buf.AppendDuration(v.Duration())
 	case KindTime:
-		s.appendTime(v.Time())
+		s.buf.AppendTime(v.Time(), "")
+		// s.appendTime(v.Time())
 	case KindAny:
-		a := v.Any()
-		_, jm := a.(json.Marshaler)
-		if err, ok := a.(error); ok && !jm {
-			s.appendString(err.Error())
-		} else {
-			return appendJSONMarshal(s.buf, a)
+		vv := v.Any()
+		switch m := vv.(type) {
+		case io.WriterTo:
+			_, err := m.WriteTo(s.buf)
+			return err
+
+		case json.Marshaler:
+			return appendJSONMarshal(s.buf, vv)
+
+		case error:
+			s.appendString(m.Error())
+			return nil
 		}
+		return appendJSONMarshal(s.buf, vv)
 	default:
 		panic(fmt.Sprintf("bad kind: %s", v.Kind()))
 	}
 	return nil
 }
 
-func appendJSONMarshal(buf *Buffer, v any) error {
+func appendJSONMarshal(buf io.Writer, v any) error {
 	// Use a json.Encoder to avoid escaping HTML.
 	// var bb bytes.Buffer
 	bb := newBuffer()
