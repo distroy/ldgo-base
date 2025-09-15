@@ -62,6 +62,42 @@ func TestIntervalEnabler(t *testing.T) {
 	})
 }
 
+func TestEnablerByInterval(t *testing.T) {
+	convey.Convey(t.Name(), t, func(c convey.C) {
+		const (
+			info = LevelInfo
+			err  = LevelError
+
+			interval = time.Millisecond * 50
+		)
+		enabler := func() Enabler { return EnablerByInterval(interval, 0) }
+
+		l := enabler()
+		c.Convey("first", func(c convey.C) {
+			for range 10 {
+				c.So(l.Enable(info, 1), convey.ShouldBeTrue)
+				c.So(l.Enable(err, 1), convey.ShouldBeTrue)
+			}
+		})
+		l = enabler()
+		c.Convey("second", func(c convey.C) {
+			for range 10 {
+				c.So(l.Enable(info, 1), convey.ShouldBeFalse)
+				c.So(l.Enable(err, 1), convey.ShouldBeTrue)
+			}
+		})
+
+		time.Sleep(interval)
+		l = enabler()
+		c.Convey("after sleep interval", func(c convey.C) {
+			for range 10 {
+				c.So(l.Enable(info, 1), convey.ShouldBeTrue)
+				c.So(l.Enable(err, 1), convey.ShouldBeTrue)
+			}
+		})
+	})
+}
+
 func Test_rateEnabler_Enable(t *testing.T) {
 	convey.Convey(t.Name(), t, func(c convey.C) {
 		l := &rateEnabler{}

@@ -25,6 +25,7 @@ type (
 // *** level begin ****
 
 const (
+	LevelTrace Level = slogtype__.LevelTrace
 	LevelDebug Level = slogtype__.LevelDebug
 	LevelInfo  Level = slogtype__.LevelInfo
 	LevelWarn  Level = slogtype__.LevelWarn
