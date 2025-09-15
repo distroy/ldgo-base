@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"unicode"
 	"unicode/utf8"
+	"unsafe"
 
 	"github.com/distroy/ldgo-base/ldconv"
 )
@@ -227,32 +228,22 @@ func appendJSONValue(s *handleState, v Value) error {
 			return err
 
 		case json.Marshaler:
-			return appendJSONMarshal(s.buf, vv)
+			return s.buf.AppendJson(vv)
 
 		case error:
 			s.appendString(m.Error())
 			return nil
+
+		case unsafe.Pointer:
+			s.buf.AppendString("0x")
+			*s.buf = strconv.AppendUint(*s.buf, uint64(uintptr(m)), 0x10)
+			return nil
+
+		default:
+			return s.buf.AppendJson(vv)
 		}
-		return appendJSONMarshal(s.buf, vv)
 	default:
 		panic(fmt.Sprintf("bad kind: %s", v.Kind()))
 	}
-	return nil
-}
-
-func appendJSONMarshal(buf io.Writer, v any) error {
-	// Use a json.Encoder to avoid escaping HTML.
-	// var bb bytes.Buffer
-	bb := newBuffer()
-	defer func() {
-		bb.Free()
-	}()
-	enc := json.NewEncoder(bb)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(v); err != nil {
-		return err
-	}
-	bs := bb.Bytes()
-	buf.Write(bs[:len(bs)-1]) // remove final newline
 	return nil
 }

@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	defLogger = ldatomic.NewAny(New(NewHandler(os.Stderr, nil)))
 	console   = New(NewHandler(os.Stderr, nil))
 	discard   = newDiscard()
+	defLogger = ldatomic.NewAny(console)
 )
 
 func SetDefault(l *Logger) { defLogger.Store(l) }

@@ -5,6 +5,7 @@
 package buf__
 
 import (
+	"encoding/json"
 	"slices"
 	"strconv"
 	"time"
@@ -16,12 +17,6 @@ const (
 	TimeLayout = "2006-01-02T15:04:05.000Z0700"
 )
 
-const smallBufferSize = 64
-
-// Buffer is a byte buffer.
-//
-// This implementation is adapted from the unexported type buffer
-// in go/src/fmt/print.go.
 type Buffer []byte
 
 // Having an initial size gives a dramatic speedup.
@@ -36,8 +31,10 @@ func NewBuffer() *Buffer {
 func (b *Buffer) Free() {
 	// To reduce peak allocation, return only smaller buffers to the pool.
 	const maxBufferSize = 16 << 10
-	if cap(*b) <= maxBufferSize {
-		bufPool.Put(*(*[]byte)(b))
+	b.Reset()
+	if b.Cap() <= maxBufferSize {
+		var bb []byte = *b
+		bufPool.Put(bb)
 	}
 }
 
@@ -60,19 +57,6 @@ func (b *Buffer) TrimNewline() {
 
 func (b *Buffer) Reset() { b.SetLen(0) }
 
-func (b *Buffer) WriteDuration(d time.Duration) (int, error) {
-	l0 := len(*b)
-	b.AppendDuration(d)
-	l1 := len(*b)
-	return l1 - l0, nil
-}
-func (b *Buffer) WriteTime(t time.Time, layout string) (int, error) {
-	l0 := len(*b)
-	b.AppendTime(t, layout)
-	l1 := len(*b)
-	return l1 - l0, nil
-}
-
 func (b *Buffer) Write(p []byte) (int, error) {
 	*b = append(*b, p...)
 	return len(p), nil
@@ -83,15 +67,39 @@ func (b *Buffer) WriteString(s string) (int, error) {
 	return len(s), nil
 }
 
-func (b *Buffer) WriteQuote(s string) (int, error) {
-	l0 := len(*b)
-	*b = strconv.AppendQuote(*b, s)
-	return len(*b) - l0, nil
-}
-
 func (b *Buffer) WriteByte(c byte) error {
 	*b = append(*b, c)
 	return nil
+}
+
+func (b *Buffer) WriteBool(v bool) (int, error)    { return b.write(func() { b.AppendBool(v) }) }
+func (b *Buffer) WriteQuote(s string) (int, error) { return b.write(func() { b.AppendQuote(s) }) }
+
+func (b *Buffer) WriteInt(v int64) (int, error)   { return b.write(func() { b.AppendInt(v) }) }
+func (b *Buffer) WriteUint(v uint64) (int, error) { return b.write(func() { b.AppendUint(v) }) }
+func (b *Buffer) WriteFloat(v float64, bitSize int) (int, error) {
+	return b.write(func() { b.AppendFloat(v, bitSize) })
+}
+func (b *Buffer) WriteComplex(v complex128, bitSize int) (int, error) {
+	return b.write(func() { b.AppendComplex(v, bitSize) })
+}
+
+func (b *Buffer) WriteDuration(d time.Duration) (int, error) {
+	return b.write(func() { b.AppendDuration(d) })
+}
+func (b *Buffer) WriteTime(t time.Time, layout string) (int, error) {
+	return b.write(func() { b.AppendTime(t, layout) })
+}
+func (b *Buffer) WriteJson(v any) (int, error) {
+	l0 := b.Len()
+	err := b.AppendJson(v)
+	return b.Len() - l0, err
+}
+
+func (b *Buffer) write(f func()) (int, error) {
+	l0 := b.Len()
+	f()
+	return b.Len() - l0, nil
 }
 
 func (b *Buffer) Bytes() []byte  { return *b }
@@ -123,4 +131,14 @@ func (b *Buffer) AppendTime(t time.Time, layout string) {
 		layout = TimeLayout
 	}
 	*b = t.AppendFormat(*b, layout)
+}
+
+func (b *Buffer) AppendJson(v any) error {
+	enc := json.NewEncoder(b)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return err
+	}
+	b.TrimNewline()
+	return nil
 }
