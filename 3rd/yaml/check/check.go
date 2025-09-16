@@ -2,8 +2,7 @@
 //
 // For details about the project, see:
 //
-//     http://labix.org/gocheck
-//
+//	http://labix.org/gocheck
 package check
 
 import (
@@ -160,7 +159,7 @@ func (td *tempDir) removeAll() {
 	if td.path != "" {
 		err := os.RemoveAll(td.path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "WARNING: Error cleaning up temporaries: "+err.Error())
+			fmt.Fprint(os.Stderr, "WARNING: Error cleaning up temporaries: "+err.Error())
 		}
 	}
 }
