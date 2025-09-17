@@ -300,7 +300,7 @@ func getConfigFieldCallbackByDecode(cf *configField, decode func(c context.Conte
 		}
 
 		x := v.Interface()
-		ldctx.LogI(ctx, "[ldrcfg] update parser object succ", ldlog.String("method", cf.Type),
+		ldctx.LogI(ctx, "[ldrcfg] update object succ", ldlog.String("method", cf.Type),
 			ldlog.String("ns", ns), ldlog.String("key", key), ldlog.Reflect("value", x))
 
 		cf.Store(v)
