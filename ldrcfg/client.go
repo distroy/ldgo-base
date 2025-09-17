@@ -31,6 +31,12 @@ type ListenerAdaptor interface {
 	AddListener(ns string, cb func(*NamespaceChangeEvent))
 }
 
+type SequenceAdaptor interface {
+	Adaptor
+
+	NewSequence() string
+}
+
 func NewClient(cli Adaptor) *Client {
 	_, ok := cli.(ListenerAdaptor)
 	return &Client{
@@ -42,6 +48,8 @@ func NewClient(cli Adaptor) *Client {
 
 type Client struct {
 	client     Adaptor
+	started    ldsync.Once
+	stoped     ldsync.Once
 	logger     *ldlog.Logger
 	callbacks  map[string]*clientNsCallback
 	mu         sync.Mutex
@@ -92,6 +100,16 @@ func (c *Client) Client() Adaptor                { return c.client }
 func (c *Client) SetLogger(logger *ldlog.Logger) { c.logger = logger }
 
 func (c *Client) Start(ctx context.Context) error {
+	return c.started.Do(func() error {
+		if err := c.start(ctx); err != nil {
+			return err
+		}
+		c.stoped.Reset()
+		return nil
+	})
+}
+
+func (c *Client) start(ctx context.Context) error {
 	cli := c.client
 
 	if err := cli.Start(); err != nil {
@@ -111,13 +129,21 @@ func (c *Client) Start(ctx context.Context) error {
 }
 
 func (c *Client) Stop(ctx context.Context) {
-	cli := c.client
-	cli.Stop()
-
-	if !c.autoListen {
-		c.doneWait.Stop()
-		c.doneWait.Wait()
+	if !c.started.Done() {
+		return
 	}
 
-	ldctx.LogI(ctx, "[ldrcfg] stop succ", ldlog.String("type", cli.Type()))
+	c.stoped.Do(func() error {
+		cli := c.client
+		cli.Stop()
+
+		if !c.autoListen {
+			c.doneWait.Stop()
+			c.doneWait.Wait()
+		}
+
+		ldctx.LogI(ctx, "[ldrcfg] stop succ", ldlog.String("type", cli.Type()))
+		c.started.Reset()
+		return nil
+	})
 }
