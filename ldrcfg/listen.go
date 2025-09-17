@@ -123,7 +123,7 @@ func (c *Client) onChangeWitContext(ctx context.Context, ev *NamespaceChangeEven
 
 	nsCallback := c.callbacks[ev.Namespace]
 	if nsCallback == nil {
-		ldctx.LogW(ctx, "[config center] the namespace has not been registered",
+		ldctx.LogW(ctx, "[ldrcfg] the namespace has not been registered",
 			ldlog.String("ns", ev.Namespace))
 		return
 	}
@@ -294,7 +294,7 @@ func (c *Client) triggerNsCallback(ctx context.Context, ns *clientNsCallback) {
 		}
 	}
 
-	ldctx.LogT(ctx, "[config center] namespace update", ldlog.Reflect("event", ev))
+	ldctx.LogT(ctx, "[ldrcfg] namespace update", ldlog.Reflect("event", ev))
 	ns.Cache = newMap
 	c.onChangeWitContext(ctx, ev)
 }
