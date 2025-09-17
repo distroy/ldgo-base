@@ -43,14 +43,14 @@ func (c *testParserConfig) Parse(ctx context.Context, v []byte) error {
 func TestClient_Register(t *testing.T) {
 	convey.Convey(t.Name(), t, func(c convey.C) {
 		type Config struct {
-			Str     Event[string]            `ldrcfg:"key:str; type:string"`
-			Json    Event[testJsonConfig]    `ldrcfg:"key:json; type:json"`
-			Yaml    Event[testYamlConfig]    `ldrcfg:"key:yaml; type:yaml"`
-			Parser  Event[testParserConfig]  `ldrcfg:"key:parser; type:parser"`
-			Strp    Event[*string]           `ldrcfg:"key:strp"`
-			Jsonp   Event[*testJsonConfig]   `ldrcfg:"key:jsonp"`
-			Yamlp   Event[*testYamlConfig]   `ldrcfg:"key:yamlp"`
-			Parserp Event[*testParserConfig] `ldrcfg:"key:parserp"`
+			Str     Event[string]             `ldrcfg:"key:str; type:string"`
+			Json    Event[testJsonConfig]     `ldrcfg:"key:json; type:json"`
+			Yaml    Event[testYamlConfig]     `ldrcfg:"key:yaml; type:yaml"`
+			Parser  Event[testParserConfig]   `ldrcfg:"key:parser; type:parser"`
+			Strp    *Event[*string]           `ldrcfg:""`
+			Jsonp   *Event[*testJsonConfig]   `ldrcfg:""`
+			Yamlp   *Event[*testYamlConfig]   `ldrcfg:""`
+			Parserp *Event[*testParserConfig] `ldrcfg:""`
 		}
 
 		var (
@@ -63,6 +63,9 @@ func TestClient_Register(t *testing.T) {
 			vv      any
 		)
 
+		cli.SetLogger(ldlog.Discard())
+		cli.Register(ns, cfg)
+
 		cfg.Str.OnChange(ctx, func(c context.Context, v string) { vv = v })
 		cfg.Json.OnChange(ctx, func(c context.Context, v testJsonConfig) { vv = v })
 		cfg.Yaml.OnChange(ctx, func(c context.Context, v testYamlConfig) { vv = v })
@@ -72,15 +75,12 @@ func TestClient_Register(t *testing.T) {
 		cfg.Yamlp.OnChange(ctx, func(c context.Context, v *testYamlConfig) { vv = v })
 		cfg.Parserp.OnChange(ctx, func(c context.Context, v *testParserConfig) { vv = v })
 
-		cli.logger = ldlog.Discard()
-		cli.Register(ns, cfg)
-
 		c.Convey("str", func(c convey.C) {
 			var (
 				vk = "str"
 				pk = "strp"
 				v  = &cfg.Str
-				p  = &cfg.Strp
+				p  = cfg.Strp
 			)
 
 			trigger(vk, `1234`)
@@ -97,7 +97,7 @@ func TestClient_Register(t *testing.T) {
 				vk = "json"
 				pk = "jsonp"
 				v  = &cfg.Json
-				p  = &cfg.Jsonp
+				p  = cfg.Jsonp
 			)
 
 			trigger(vk, `abc`)
@@ -132,7 +132,7 @@ func TestClient_Register(t *testing.T) {
 				vk = "yaml"
 				pk = "yamlp"
 				v  = &cfg.Yaml
-				p  = &cfg.Yamlp
+				p  = cfg.Yamlp
 			)
 
 			trigger(vk, `abc`)
@@ -163,7 +163,7 @@ func TestClient_Register(t *testing.T) {
 				vk = "parser"
 				pk = "parserp"
 				v  = &cfg.Parser
-				p  = &cfg.Parserp
+				p  = cfg.Parserp
 			)
 
 			trigger(vk, `abc`)

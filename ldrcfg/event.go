@@ -5,7 +5,6 @@
 package ldrcfg
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -87,9 +86,26 @@ type configField struct {
 	Key         string
 	Type        string
 	Callback    func(context.Context, *KeyChangeEvent)
-	Store       reflect.Value
-	Load        reflect.Value
-	Events      reflect.Value
+	store       reflect.Value
+	load        reflect.Value
+	events      reflect.Value
+}
+
+func (cf *configField) Store(v reflect.Value) { cf.store.Call([]reflect.Value{v}) }
+func (cf *configField) Load() reflect.Value   { return cf.load.Call(nil)[0] }
+func (cf *configField) Events() reflect.Value {
+	if !cf.events.IsValid() {
+		return reflect.Value{}
+	}
+	return cf.events.Call(nil)[0]
+}
+
+func newRefPtrByType(t reflect.Type) reflect.Value {
+	p := reflect.New(t)
+	if t.Kind() == reflect.Ptr {
+		p = p.Elem()
+	}
+	return p
 }
 
 func parseConfigField(fv reflect.Value, sf reflect.StructField) *configField {
@@ -106,11 +122,11 @@ func parseConfigField(fv reflect.Value, sf reflect.StructField) *configField {
 		key = ldstr.ToSnakeCase(sf.Name)
 	}
 
-	if fv.Kind() == reflect.Ptr && fv.Pointer() == 0 {
-		fv.Set(reflect.New(fv.Type().Elem()))
-
-	} else {
+	if fv.Kind() != reflect.Ptr {
 		fv = fv.Addr()
+
+	} else if fv.Pointer() == 0 {
+		fv.Set(reflect.New(fv.Type().Elem()))
 	}
 
 	store := fv.MethodByName("Store")
@@ -135,9 +151,9 @@ func parseConfigField(fv reflect.Value, sf reflect.StructField) *configField {
 		DataType:    dataType,
 		Key:         key,
 		Type:        typ,
-		Store:       store,
-		Load:        load,
-		Events:      events,
+		store:       store,
+		load:        load,
+		events:      events,
 	}
 	cf.Callback = getConfigFieldCallback(cf)
 	return cf
@@ -184,20 +200,8 @@ func checkConfigFieldEventType(events reflect.Value, dataType reflect.Type) bool
 }
 
 func getConfigFieldCallback(cf *configField) func(context.Context, *KeyChangeEvent) {
-	p := reflect.New(cf.DataType)
-	if cf.DataType.Kind() == reflect.Ptr {
-		p = p.Elem()
-	}
-
 	if cf.Type == "" {
-		_, isParser := p.Interface().(Parser)
-		dt := cf.DataType
-		if isParser {
-			cf.Type = "parser"
-
-		} else if dt.Kind() == reflect.String || (dt.Kind() == reflect.Ptr && dt.Elem().Kind() == reflect.String) {
-			cf.Type = "string"
-		}
+		cf.Type = detectConfigFieldType(cf)
 	}
 
 	switch cf.Type {
@@ -218,6 +222,7 @@ func getConfigFieldCallback(cf *configField) func(context.Context, *KeyChangeEve
 		})
 
 	case "parser":
+		p := newRefPtrByType(cf.DataType)
 		_, isParser := p.Interface().(Parser)
 		if !isParser {
 			panic(fmt.Errorf("[ldrcfg] data type should be parser. field:%s, data type:%s",
@@ -230,13 +235,43 @@ func getConfigFieldCallback(cf *configField) func(context.Context, *KeyChangeEve
 		})
 	}
 
+	cf.Type = "auto" // yaml or json
 	return getConfigFieldCallbackByDecode(cf, func(c context.Context, in []byte, out any) error {
-		in = bytes.TrimSpace(in)
-		if len(in) == 0 || in[0] == '[' || in[0] == '{' {
-			return json.Unmarshal(in, out)
+		// in = bytes.TrimSpace(in)
+		// if len(in) == 0 || in[0] == '[' || in[0] == '{' {
+		// 	return json.Unmarshal(in, out)
+		// }
+		err0 := json.Unmarshal(in, out)
+		if err0 == nil {
+			return nil
 		}
-		return yaml.Unmarshal(in, out)
+		err1 := yaml.Unmarshal(in, out)
+		if err1 == nil {
+			return nil
+		}
+		return err0
 	})
+}
+
+func detectConfigFieldType(cf *configField) string {
+	p := newRefPtrByType(cf.DataType)
+	switch p.Interface().(type) {
+	case Parser:
+		return "parser"
+
+		// case yaml.Unmarshaler:
+		// 	return "yaml"
+		//
+		// case json.Unmarshaler:
+		// 	return "json"
+	}
+
+	dt := cf.DataType
+	if dt.Kind() == reflect.String || (dt.Kind() == reflect.Ptr && dt.Elem().Kind() == reflect.String) {
+		cf.Type = "string"
+	}
+
+	return ""
 }
 
 func getConfigFieldCallbackByDecode(cf *configField, decode func(c context.Context, in []byte, out any) error) func(context.Context, *KeyChangeEvent) {
@@ -268,17 +303,16 @@ func getConfigFieldCallbackByDecode(cf *configField, decode func(c context.Conte
 		ldctx.LogI(ctx, "[config center] update parser object succ", ldlog.String("method", cf.Type),
 			ldlog.String("ns", ns), ldlog.String("key", key), ldlog.Reflect("value", x))
 
-		cf.Store.Call([]reflect.Value{v})
-
-		if !cf.Events.IsValid() {
+		cf.Store(v)
+		evs := cf.Events()
+		if !evs.IsValid() || evs.Len() == 0 {
 			return
 		}
 
 		ctxVal := reflect.ValueOf(ctx)
 
-		outs := cf.Events.Call(nil)[0]
-		for i := range outs.Len() {
-			f := outs.Index(i)
+		for i := range evs.Len() {
+			f := evs.Index(i)
 			f.Call([]reflect.Value{ctxVal, v})
 		}
 		// e.trigger(ctx, x)
@@ -291,11 +325,11 @@ func setConfigFieldDefaultData(cf *configField) {
 		return
 	}
 
-	out := cf.Load.Call(nil)[0]
+	out := cf.Load()
 	if out.IsValid() && !out.IsNil() {
 		return
 	}
 
 	v := reflect.New(dt.Elem())
-	cf.Store.Call([]reflect.Value{v})
+	cf.Store(v)
 }

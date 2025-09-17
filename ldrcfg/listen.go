@@ -38,9 +38,9 @@ type clientKeyCallback struct {
 }
 
 func (c *Client) newSequence() string {
-	a, _ := c.client.(interface{ NewSequence() string })
-	if a != nil {
-		return a.NewSequence()
+	cli, _ := c.client.(SequenceAdaptor)
+	if cli != nil {
+		return cli.NewSequence()
 	}
 	return ldrand.String(16)
 }
