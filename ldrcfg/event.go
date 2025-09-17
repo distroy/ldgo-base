@@ -268,7 +268,7 @@ func detectConfigFieldType(cf *configField) string {
 
 	dt := cf.DataType
 	if dt.Kind() == reflect.String || (dt.Kind() == reflect.Ptr && dt.Elem().Kind() == reflect.String) {
-		cf.Type = "string"
+		return "string"
 	}
 
 	return ""
