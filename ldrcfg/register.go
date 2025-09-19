@@ -52,15 +52,67 @@ type KeyChangeEvent struct {
 func (c *Client) RegisterNamespace(ns string, cb func(context.Context, *NamespaceChangeEvent)) {
 	callback := c.getNamespaceCallbacks(ns)
 
-	callback.Mu.Lock()
-	defer callback.Mu.Unlock()
-	callback.Callbacks = append(callback.Callbacks, cb)
+	func() {
+		callback.Mu.Lock()
+		defer callback.Mu.Unlock()
+		callback.Callbacks = append(callback.Callbacks, cb)
+	}()
+
+	if !c.started.Done() {
+		return
+	}
+
+	changes := func() map[string]*ChangeData {
+		callback.Mu.Lock()
+		defer callback.Mu.Unlock()
+
+		cache := callback.Cache
+		if len(cache) == 0 {
+			return nil
+		}
+
+		res := make(map[string]*ChangeData, len(cache))
+		for k, v := range cache {
+			res[k] = &ChangeData{
+				ChangeType: ChangeTypeAdd,
+				NewValue:   v,
+			}
+		}
+		return res
+	}()
+
+	ctx := c.getContext()
+	cb(ctx, &NamespaceChangeEvent{
+		Namespace: ns,
+		Changes:   changes,
+	})
 }
 
 func (c *Client) RegisterKey(ns, key string, cb func(context.Context, *KeyChangeEvent)) {
 	callback := c.getKeyCallbacks(ns, key)
 
-	callback.Mu.Lock()
-	defer callback.Mu.Unlock()
-	callback.Callbacks = append(callback.Callbacks, cb)
+	func() {
+		callback.Mu.Lock()
+		defer callback.Mu.Unlock()
+		callback.Callbacks = append(callback.Callbacks, cb)
+	}()
+
+	if !c.started.Done() {
+		return
+	}
+
+	val, err := c.client.GetKey(ns, key)
+	if err != nil {
+		return
+	}
+
+	ctx := c.getContext()
+	cb(ctx, &KeyChangeEvent{
+		Namespace: ns,
+		Key:       key,
+		Change: &ChangeData{
+			ChangeType: ChangeTypeAdd,
+			NewValue:   val,
+		},
+	})
 }

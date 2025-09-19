@@ -268,7 +268,7 @@ func detectConfigFieldType(cf *configField) string {
 
 	dt := cf.DataType
 	if dt.Kind() == reflect.String || (dt.Kind() == reflect.Ptr && dt.Elem().Kind() == reflect.String) {
-		cf.Type = "string"
+		return "string"
 	}
 
 	return ""
@@ -293,14 +293,14 @@ func getConfigFieldCallbackByDecode(cf *configField, decode func(c context.Conte
 
 		raw := ldconv.StrToBytesUnsafe(ev.Change.NewValue)
 		if err := decode(ctx, raw, p.Interface()); err != nil {
-			ldctx.LogE(ctx, "[config center] parse object fail", ldlog.String("method", cf.Type),
+			ldctx.LogE(ctx, "[ldrcfg] parse object fail", ldlog.String("method", cf.Type),
 				ldlog.String("ns", ns), ldlog.String("key", key), ldlog.String("str", ev.Change.NewValue),
 				ldlog.Error(err))
 			return
 		}
 
 		x := v.Interface()
-		ldctx.LogI(ctx, "[config center] update parser object succ", ldlog.String("method", cf.Type),
+		ldctx.LogI(ctx, "[ldrcfg] update object succ", ldlog.String("method", cf.Type),
 			ldlog.String("ns", ns), ldlog.String("key", key), ldlog.Reflect("value", x))
 
 		cf.Store(v)
