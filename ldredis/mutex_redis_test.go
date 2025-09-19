@@ -108,9 +108,14 @@ func (r *memMutexRedis) Expire(key string, expiration time.Duration) BoolCmder {
 	d.Deadline = now.Add(expiration)
 	return newCmd(true)
 }
-func (r *memMutexRedis) Del(key string) IntCmder {
+func (r *memMutexRedis) Del(keys ...string) IntCmder {
 	newCmd := func(val int64) IntCmder {
-		cmd := newTestIntCmd("del", key)
+		args := make([]any, 0, len(keys))
+		args = append(args, "del")
+		for _, key := range keys {
+			args = append(args, key)
+		}
+		cmd := newTestIntCmd(args...)
 		cmd.SetVal(val)
 		return cmd
 	}
@@ -118,11 +123,19 @@ func (r *memMutexRedis) Del(key string) IntCmder {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	cnt := int64(0)
+	for _, key := range keys {
+		cnt += r.del(key)
+	}
+	return newCmd(cnt)
+}
+
+func (r *memMutexRedis) del(key string) int64 {
 	d := r.data[key]
 	now := time.Now()
 	if r.isDataExpire(d, now) {
-		return newCmd(0)
+		return 0
 	}
 	delete(r.data, key)
-	return newCmd(1)
+	return 1
 }

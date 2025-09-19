@@ -13,14 +13,14 @@ type MutexRedis[BoolCmd BoolCmder, IntCmd IntCmder, StringCmd StringCmder] inter
 	SetNX(c context.Context, key string, value any, expiration time.Duration) BoolCmd
 	Get(c context.Context, key string) StringCmd
 	Expire(c context.Context, key string, expiration time.Duration) BoolCmd
-	Del(c context.Context, key string) IntCmd
+	Del(c context.Context, keys ...string) IntCmd
 }
 
 type MutexRedisWithCtx[Redis any, BoolCmd BoolCmder, IntCmd IntCmder, StringCmd StringCmder] interface {
 	SetNX(key string, value any, expiration time.Duration) BoolCmd
 	Get(key string) StringCmd
 	Expire(key string, expiration time.Duration) BoolCmd
-	Del(key string) IntCmd
+	Del(keys ...string) IntCmd
 
 	WithContext(c context.Context) Redis
 }
@@ -52,6 +52,6 @@ func (r MutexRedisWithCtxWrapper[Redis, BoolCmd, IntCmd, StringCmd]) Get(c conte
 func (r MutexRedisWithCtxWrapper[Redis, BoolCmd, IntCmd, StringCmd]) Expire(c context.Context, key string, expiration time.Duration) BoolCmd {
 	return r.get(c).Expire(key, expiration)
 }
-func (r MutexRedisWithCtxWrapper[Redis, BoolCmd, IntCmd, StringCmd]) Del(c context.Context, key string) IntCmd {
-	return r.get(c).Del(key)
+func (r MutexRedisWithCtxWrapper[Redis, BoolCmd, IntCmd, StringCmd]) Del(c context.Context, keys ...string) IntCmd {
+	return r.get(c).Del(keys...)
 }
