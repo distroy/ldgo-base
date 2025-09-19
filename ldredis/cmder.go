@@ -9,9 +9,9 @@ type Cmder interface {
 	// e.g. "set k v ex 10" -> "set", "cluster info" -> "cluster".
 	Name() string
 
-	// full command name.
-	// e.g. "set k v ex 10" -> "set", "cluster info" -> "cluster info".
-	FullName() string
+	// // full command name.
+	// // e.g. "set k v ex 10" -> "set", "cluster info" -> "cluster info".
+	// FullName() string
 
 	// all args of the command.
 	// e.g. "set k v ex 10" -> "[set k v ex 10]".
