@@ -13,12 +13,6 @@ import (
 	"github.com/distroy/ldgo-base/lditer"
 )
 
-func testFor[T any](seq lditer.Seq[T], do func(v T)) {
-	for v := range seq {
-		do(v)
-	}
-}
-
 func testPrintGroup(c convey.C, group, idx int, value any) {
 	if (idx % group) == 0 {
 		c.Print("\n      ", value)
@@ -30,7 +24,10 @@ func testPrintGroup(c convey.C, group, idx int, value any) {
 func TestNew(t *testing.T) {
 	times := 1024
 	retry := func(retry int, f func(i int)) {
-		testFor(lditer.Int(retry), f)
+		testFor(lditer.Int(retry), func(i int) bool {
+			f(i)
+			return true
+		})
 	}
 	convey.Convey(t.Name(), t, func(c convey.C) {
 		r := New(NewFastSource(time.Now().UnixNano()))
@@ -76,20 +73,23 @@ func TestNew(t *testing.T) {
 			n := 16
 			l := r.Perm(n)
 			c.Print(l)
-			testFor(lditer.Int(len(l)), func(i int) {
+			testFor(lditer.Int(len(l)), func(i int) bool {
 				c.So(l, convey.ShouldContain, i)
+				return true
 			})
 		})
 		c.Convey(`shuffle`, func(c convey.C) {
 			n := 16
 			l := make([]int, 0, n)
-			testFor(lditer.Int(len(l)), func(i int) {
+			testFor(lditer.Int(len(l)), func(i int) bool {
 				l = append(l, i)
+				return true
 			})
 			r.Shuffle(len(l), func(i, j int) { l[i], l[j] = l[j], l[i] })
 			c.Print(l)
-			testFor(lditer.Int(len(l)), func(i int) {
+			testFor(lditer.Int(len(l)), func(i int) bool {
 				c.So(l, convey.ShouldContain, i)
+				return true
 			})
 		})
 
@@ -97,22 +97,25 @@ func TestNew(t *testing.T) {
 			b := make([]byte, 1024)
 			r.Read(b)
 			c.Print(b)
-			testFor(lditer.ToSeqByValue(lditer.Slice(b)), func(v byte) {
+			testFor(lditer.ToSeqByValue(lditer.Slice(b)), func(v byte) bool {
 				c.So(v, convey.ShouldBeBetweenOrEqual, 0, 255)
+				return true
 			})
 		})
 		c.Convey(`bytes`, func(c convey.C) {
 			b := r.Bytes(1024)
 			c.Print(b)
-			testFor(lditer.ToSeqByValue(lditer.Slice(b)), func(v byte) {
+			testFor(lditer.ToSeqByValue(lditer.Slice(b)), func(v byte) bool {
 				c.So(v, convey.ShouldBeBetweenOrEqual, 0, 255)
+				return true
 			})
 		})
 		c.Convey(`string`, func(c convey.C) {
 			s := r.String(1024)
 			c.Print(s)
-			testFor(lditer.ToSeqByValue(lditer.String(s)), func(v rune) {
+			testFor(lditer.ToSeqByValue(lditer.String(s)), func(v rune) bool {
 				c.So(v, convey.ShouldBeBetweenOrEqual, 0, 255)
+				return true
 			})
 		})
 
