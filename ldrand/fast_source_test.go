@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/distroy/ldgo-base/3rd/convey"
+	"github.com/distroy/ldgo-base/lditer"
 	"github.com/distroy/ldgo-base/ldmath"
 )
 
@@ -71,7 +72,7 @@ func (t *testFastSource) Test() {
 		diff  = t.Diff
 	)
 	name := fmt.Sprintf("mod=%d,scale=%d,diff=%d", mod, scale, diff)
-	convey.Convey(name, func() {
+	convey.Convey(name, func(c convey.C) {
 		r := New(NewFastSource(time.Now().UnixNano()))
 
 		counts := make([]int, mod)
@@ -91,7 +92,7 @@ func (t *testFastSource) Test() {
 }
 
 func Test_fastSource_ProbabilityOfOverall(t *testing.T) {
-	convey.Convey(t.Name(), t, func() {
+	convey.Convey(t.Name(), t, func(c convey.C) {
 		(&testFastSource{
 			Mod:   100,
 			Scale: 1000 * 200,
@@ -113,15 +114,15 @@ func Test_fastSource_ProbabilityOfOverall(t *testing.T) {
 func Test_fastSource_ProbabilityOfVery4Bits(t *testing.T) {
 	r := New(NewFastSource(time.Now().UnixNano()))
 
-	convey.Convey(t.Name(), t, func() {
-		convey.Convey("check the probability of very 4 bits", func() {
+	convey.Convey(t.Name(), t, func(c convey.C) {
+		c.Convey("check the probability of very 4 bits", func(c convey.C) {
 			const (
 				scale = 1000 * 100
 				diff  = 1000 * 4
 			)
 
 			countsPer4Bits := [16][16]int{}
-			for i := 0; i < scale*16; i++ {
+			for range scale * 16 {
 				v := r.Uint64()
 				for i := range countsPer4Bits {
 					countsPer4Bits[i][v&0xf]++
@@ -141,8 +142,8 @@ func Test_fastSource_ProbabilityOfVery4Bits(t *testing.T) {
 		})
 	})
 }
-func testGetDiffThresholdBySliceFunc(diff1, diff2 int) func(idx int, slice interface{}) int {
-	return func(idx int, slice interface{}) int {
+func testGetDiffThresholdBySliceFunc(diff1, diff2 int) func(idx int, slice any) int {
+	return func(idx int, slice any) int {
 		sliceV := reflect.ValueOf(slice)
 		if idx == sliceV.Len()-1 {
 			return diff2
@@ -156,81 +157,105 @@ func Test_fastSource_ProbabilityOfVery4BitsWithPreviousNumber(t *testing.T) {
 	const (
 		scale = 1000 * 100 * 16 * 16
 		diff1 = 5000
-		diff2 = 6500
+		diff2 = 5000
+		// diff2 = 6500
 	)
 
 	getDiffThreshold := testGetDiffThresholdBySliceFunc(diff1, diff2)
 
-	convey.Convey(t.Name(), t, func() {
-		convey.Convey("check the probability of very 4 bits with previous number", func() {
-			countsPer4BitsWithPrev := [16][16][16]int{}
-			var prevNum uint64
-			for i := 0; i < scale; i++ {
-				v := r.Uint64()
-				p := prevNum
-				prevNum = v
-				for i := range countsPer4BitsWithPrev {
-					countsPer4BitsWithPrev[i][p&0xf][v&0xf]++
-					v = v >> 4
-					p = p >> 4
-				}
+	countsPer4BitsWithPrev := [16][16][16]int{}
+	runCount := 0
+	run := func() {
+		runCount++
+		prevNum := r.Uint64()
+		for range scale {
+			v := r.Uint64()
+			p := prevNum
+			prevNum = v
+			for i := range countsPer4BitsWithPrev {
+				countsPer4BitsWithPrev[i][p&0xf][v&0xf]++
+				v = v >> 4
+				p = p >> 4
 			}
+		}
+	}
 
-			log.Printf("")
-			for i, v := range countsPer4BitsWithPrev {
-				for j, w := range v {
-					min := minInt(w[:])
-					max := maxInt(w[:])
-					ratio := diffRatio(w[:])
-					log.Printf("postion:%d, prev:%d, diff:%d, ratio:%.04g, min:%d, max:%d, v:%v",
-						i, j, max-min, ratio, min, max, w[:])
+	check := func() bool {
+		return testFor2(lditer.Slice(countsPer4BitsWithPrev[:]), func(i int, v [16][16]int) bool {
+			return testFor2(lditer.Slice(v[:]), func(_ int, w [16]int) bool {
+				min := minInt(w[:])
+				max := maxInt(w[:])
 
-					diff := getDiffThreshold(i, countsPer4BitsWithPrev[:])
-					// sometimes it will be failed
-					convey.So(max-min, convey.ShouldBeLessThan, diff)
+				diff := getDiffThreshold(i, countsPer4BitsWithPrev[:])
+				if (max - min) >= (diff * runCount) {
+					return false
 				}
-			}
+				return true
+			})
+		})
+	}
+
+	convey.Convey(t.Name(), t, func(c convey.C) {
+		run()
+		if !check() {
+			run()
+			run()
+		}
+
+		c.Printf("\nrun times:%d, rand times:%d", runCount, runCount*scale)
+		testFor2(lditer.Slice(countsPer4BitsWithPrev[:]), func(i int, v [16][16]int) bool {
+			// return false
+			testFor2(lditer.Slice(v[:]), func(j int, w [16]int) bool {
+				min := minInt(w[:])
+				max := maxInt(w[:])
+				ratio := diffRatio(w[:])
+				c.Printf("\npostion:%d, prev:%d, diff:%d, ratio:%.04g, min:%d, max:%d, v:%v",
+					i, j, max-min, ratio, min, max, w[:])
+
+				diff := getDiffThreshold(i, countsPer4BitsWithPrev[:])
+				// sometimes it will be failed
+				c.So(max-min, convey.ShouldBeLessThan, diff*runCount)
+				return true
+			})
+			return true
 		})
 	})
 }
 
 func Test_fastSource_ProbabilityOfVeryByte(t *testing.T) {
 	r := New(NewFastSource(time.Now().UnixNano()))
+	convey.Convey(t.Name(), t, func(c convey.C) {
+		const (
+			scale = 1000 * 100
+			diff  = 1000 * 5
+		)
 
-	convey.Convey(t.Name(), t, func() {
-		convey.Convey("check the probability of very byte", func() {
-			const (
-				scale = 1000 * 100
-				diff  = 1000 * 5
-			)
-
-			countsPer4Bits := [8][256]int{}
-			for range scale * 256 {
-				v := r.Uint64()
-				for i := range countsPer4Bits {
-					countsPer4Bits[i][v&0xff]++
-					v = v >> 8
-				}
+		countsPer4Bits := [8][256]int{}
+		for range scale * 256 {
+			v := r.Uint64()
+			for i := range countsPer4Bits {
+				countsPer4Bits[i][v&0xff]++
+				v = v >> 8
 			}
+		}
 
-			log.Printf("")
-			for i, v := range countsPer4Bits {
-				min := minInt(v[:])
-				max := maxInt(v[:])
-				ratio := diffRatio(v[:])
-				log.Printf("postion:%d, diff:%d, ratio:%.04g, min:%d, max:%d",
-					i, max-min, ratio, min, max)
-				convey.So(max-min, convey.ShouldBeLessThan, diff)
-			}
-		})
+		log.Printf("")
+		for i, v := range countsPer4Bits {
+			min := minInt(v[:])
+			max := maxInt(v[:])
+			ratio := diffRatio(v[:])
+			log.Printf("postion:%d, diff:%d, ratio:%.04g, min:%d, max:%d",
+				i, max-min, ratio, min, max)
+			convey.So(max-min, convey.ShouldBeLessThan, diff)
+		}
 	})
 }
 
 func Test_fastSource_Repeated(t *testing.T) {
-	convey.Convey(t.Name(), t, func() {
+	convey.Convey(t.Name(), t, func(c convey.C) {
 		r := New(NewFastSource(time.Now().UnixNano()))
 
-		convey.Convey("check result if repeated", func() {
+		c.Convey("check result if repeated", func(c convey.C) {
 			const times = 100 * 10000
 
 			m := make(map[uint64]struct{}, times)

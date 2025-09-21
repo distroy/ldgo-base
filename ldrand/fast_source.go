@@ -22,7 +22,8 @@ const (
 	//                 7654321076543210
 	// fastSourceStep = 0x1753715715313157
 	// fastSourceStep = 0x5371795313b93157
-	fastSourceStep = 0x5371795313b93d57
+	// fastSourceStep = 0x5371795313b93d57
+	fastSourceStep = 0x5971795313b93d57
 )
 
 var fastSourceXor [16]uint64 = [...]uint64{
