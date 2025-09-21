@@ -23,6 +23,9 @@ func TestLimiter_Wait(t *testing.T) {
 		interval := time.Second
 
 		l := NewLimiter(Every(interval), 1)
+
+		c.So(l.Limit(), convey.ShouldEqual, Every(interval))
+		c.So(l.Burst(), convey.ShouldEqual, 1)
 		// l.SetBurst(1)
 		// l.SetLimit(Every(interval))
 
@@ -62,25 +65,21 @@ func TestLimiter_Wait(t *testing.T) {
 			c.So(err, convey.ShouldResemble, lderr.ErrCtxDeadlineNotEnough)
 		})
 
-		// c.Convey("no wait time", func() {
-		// 	l.refresh(ctx, begin.Add(-interval))
-		// 	// time.Sleep(interval)
-		//
-		// 	err := l.Wait(ctx)
-		// 	end := time.Now()
-		// 	c.So(err, convey.ShouldBeNil)
-		// 	c.So(end, convey.ShouldHappenBefore, begin.Add(interval))
-		// 	c.So(end, convey.ShouldHappenBefore, begin.Add(1*time.Millisecond))
-		// })
+		c.Convey("no wait time", func() {
+			// l.refresh(ctx, begin.Add(-interval))
+			// time.Sleep(interval)
+
+			err := l.Wait(ctx)
+			end := time.Now()
+			c.So(err, convey.ShouldBeNil)
+			c.So(end, convey.ShouldHappenBefore, begin.Add(interval))
+			c.So(end, convey.ShouldHappenBefore, begin.Add(1*time.Millisecond))
+		})
 	})
 }
 
 func TestLimiter_Allow(t *testing.T) {
 	convey.Convey(t.Name(), t, func(c convey.C) {
-		ctx := ldctx.Default()
-		ctx, cancel := ldctx.WithCancel(ctx)
-		cancel()
-
 		interval := time.Second
 
 		l := NewLimiter(1, 1)

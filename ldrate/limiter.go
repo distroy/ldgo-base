@@ -131,7 +131,7 @@ func (l *Limiter) reserveWait(t time.Time, n int, maxFutureReserve time.Duration
 		return reservation{
 			ok:        ok,
 			limiter:   l,
-			tokens:    l.burst,
+			tokens:    n,
 			timeToAct: t,
 		}
 	}
