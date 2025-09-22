@@ -5,6 +5,8 @@
 package ldsync
 
 import (
+	"iter"
+	"reflect"
 	"sync"
 
 	"github.com/distroy/ldgo-base/ldatomic"
@@ -101,21 +103,25 @@ func (p *Map[K, V]) Range(f func(key K, val V) bool) {
 	})
 }
 
+func (p *Map[K, V]) Iter() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		p.Range(yield)
+	}
+}
+
 func (p *Map[K, V]) Map() map[K]V {
 	m := make(map[K]V, p.Size())
-	p.Range(func(key K, val V) bool {
+	for key, val := range p.Iter() {
 		m[key] = val
-		return true
-	})
+	}
 	return m
 }
 
 func (p *Map[K, V]) Keys() []K {
 	keys := make([]K, 0, p.Size())
-	p.Range(func(key K, val V) bool {
+	for key := range p.Iter() {
 		keys = append(keys, key)
-		return true
-	})
+	}
 	return keys
 }
 
@@ -134,4 +140,29 @@ func (p *Map[K, V]) LoadOrStore(key K, val V) (actual V, loaded bool) {
 	i, loaded := p.loadOrStore(key, val)
 	v, _ := i.(V)
 	return v, loaded
+}
+
+func (p *Map[K, V]) CompareAndSwap(key K, old, new V) (swapped bool) {
+	if ok := p.data.CompareAndSwap(key, old, new); ok {
+		return true
+	}
+	if ov := reflect.ValueOf(old); ov.IsZero() {
+		_, loaded := p.loadOrStore(key, new)
+		return !loaded
+	}
+	return false
+}
+
+func (p *Map[K, V]) CompareAndDelete(key K, old V) (deleted bool) {
+	if ok := p.data.CompareAndDelete(key, old); ok {
+		p.size.Add(-1)
+		return true
+	}
+	// if reflect.ValueOf(old).IsZero() {
+	// 	if ok := p.data.CompareAndDelete(key, nil); ok {
+	// 		p.size.Add(-1)
+	// 		return true
+	// 	}
+	// }
+	return false
 }
