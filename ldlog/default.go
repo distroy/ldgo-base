@@ -13,10 +13,14 @@ import (
 var (
 	console   = New(NewHandler(os.Stderr, nil))
 	discard   = newDiscard()
-	defLogger = ldatomic.NewAny(console)
+	defLogger = ldatomic.NewPtr(console)
 )
 
-func SetDefault(l *Logger) { defLogger.Store(l) }
+func SetDefault(l *Logger) (old *Logger) { return defLogger.Swap(l) }
+func SetDefaultWithClose(l *Logger) {
+	old := SetDefault(l)
+	old.Close()
+}
 
 func Default() *Logger { return defLogger.Load() }
 func Console() *Logger { return console }
