@@ -16,7 +16,16 @@ type Option func(l *core)
 
 func optAttr(key string, val any) Attr { return Reflect(key, val) }
 
-func SetLevel(lvl Level) Option   { return func(l *core) { l.withAttrs(optAttr(GetLevelKey(), lvl)) } }
+func SetLevel(lvl Level) Option { return func(l *core) { l.withAttrs(optAttr(GetLevelKey(), lvl)) } }
+func AddLevelTo(lvl Level) Option {
+	return func(l *core) {
+		if lvl <= l.Level() {
+			return
+		}
+		l.withAttrs(optAttr(GetLevelKey(), lvl))
+	}
+}
+
 func SetEnabler(e Enabler) Option { return func(l *core) { l.enabler = e } }
 func SetSequence(s string) Option { return func(l *core) { l.withAttrs(optAttr(GetSequenceKey(), s)) } }
 
