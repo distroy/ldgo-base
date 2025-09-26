@@ -23,10 +23,7 @@ func BenchmarkRuneTrieIgnoreCase(b *testing.B) {
 	blacklist := getTestBlacklist(b)
 	testcases := newTestcaseParallel(getTestcases(b))
 
-	option := &trieOpt{
-		IgnoreCase: true,
-	}
-	tt := newRuneTrie(option)
+	tt := newRuneTrie(getOpt(IgnoreCase(true)))
 	tt.Insert(blacklist...)
 
 	b.ResetTimer()
@@ -41,10 +38,7 @@ func BenchmarkByteTrieIgnoreCase(b *testing.B) {
 	blacklist := getTestBlacklist(b)
 	testcases := newTestcaseParallel(getTestcases(b))
 
-	option := &trieOpt{
-		IgnoreCase: true,
-	}
-	tt := newByteTrie(option)
+	tt := newByteTrie(getOpt(IgnoreCase(true)))
 	tt.Insert(blacklist...)
 
 	b.ResetTimer()

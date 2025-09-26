@@ -144,26 +144,22 @@ func testCommon[R any](t testing.TB, ignoreCase bool, fnWant testWantFunc[R], fn
 	t.Logf("%s result. true:%d, false:%d", t.Name(), trueCount, falseCount)
 }
 
-func testTrieSearchIgnoreCase(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchIgnoreCase(t testing.TB, fnNew func(...Option) Trie) {
 	testCommon(t, true, testSearchIgnoreCase, func(blacklist []string) func(text string) (string, bool) {
-		option := &trieOpt{}
-		IgnoreCase(true)(option)
-		tt := fnNew(option)
+		tt := fnNew(IgnoreCase(true))
 		tt.Insert(blacklist...)
 		return tt.Search
 	})
 }
 
-func testTrieSearchAllIgnoreCase(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchAllIgnoreCase(t testing.TB, fnNew func(...Option) Trie) {
 	fnWant := func(text string, blacklist []string) ([]string, bool) {
 		res, ok := testSearchAllIgnoreCase(text, blacklist)
 		ldsort.SortStrings(res)
 		return ldsort.UniqStrings(res), ok
 	}
 	testCommon(t, true, fnWant, func(blacklist []string) func(text string) ([]string, bool) {
-		option := &trieOpt{}
-		IgnoreCase(true)(option)
-		tt := fnNew(option)
+		tt := fnNew(IgnoreCase(true))
 		tt.Insert(blacklist...)
 		return func(text string) ([]string, bool) {
 			res, ok := tt.SearchAll(text)
@@ -173,49 +169,41 @@ func testTrieSearchAllIgnoreCase(t testing.TB, fnNew func(*trieOpt) Trie) {
 	})
 }
 
-func testTrieSearchBest(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchBest(t testing.TB, fnNew func(...Option) Trie) {
 	testCommon(t, false, testSearchBest, func(blacklist []string) func(text string) (string, bool) {
-		option := &trieOpt{}
-		// AllowEmpty(true)(option)
-		tt := fnNew(option)
+		tt := fnNew()
 		tt.Insert(blacklist...)
 		tt.Insert("")
 		return tt.SearchBest
 	})
 }
 
-func testTrieSearchPrefixDisableBest(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchPrefixDisableBest(t testing.TB, fnNew func(...Option) Trie) {
 	testCommon(t, true, testSearchPrefixIgnoreCase, func(blacklist []string) func(text string) (string, bool) {
-		option := &trieOpt{}
-		DisableBest(true)(option)
-		tt := fnNew(option)
+		tt := fnNew(DisableBest(true))
 		tt.Insert(blacklist...)
 		tt.Insert("")
 		return tt.SearchPrefix
 	})
 }
 
-func testTrieSearchPrefixBest(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchPrefixBest(t testing.TB, fnNew func(...Option) Trie) {
 	testCommon(t, false, testSearchPrefixBest, func(blacklist []string) func(text string) (string, bool) {
-		option := &trieOpt{}
-		DisableBest(false)(option)
-		tt := fnNew(option)
+		tt := fnNew(DisableBest(false))
 		tt.Insert(blacklist...)
 		tt.Insert("")
 		return tt.SearchPrefixBest
 	})
 }
 
-func testTrieSearchPrefixAll(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchPrefixAll(t testing.TB, fnNew func(...Option) Trie) {
 	fnWant := func(text string, blacklist []string) ([]string, bool) {
 		res, ok := testSearchPrefixAll(text, blacklist)
 		ldsort.SortStrings(res)
 		return ldsort.UniqStrings(res), ok
 	}
 	testCommon(t, false, fnWant, func(blacklist []string) func(text string) ([]string, bool) {
-		option := &trieOpt{}
-		DisableBest(false)(option)
-		tt := fnNew(option)
+		tt := fnNew(DisableBest(false))
 		tt.Insert(blacklist...)
 		tt.Insert("")
 		return func(text string) ([]string, bool) {
@@ -226,11 +214,9 @@ func testTrieSearchPrefixAll(t testing.TB, fnNew func(*trieOpt) Trie) {
 	})
 }
 
-func testTrieSearchExactAllowEmpty(t testing.TB, fnNew func(*trieOpt) Trie) {
+func testTrieSearchExactAllowEmpty(t testing.TB, fnNew func(...Option) Trie) {
 	testCommon(t, false, testSearchExact, func(blacklist []string) func(text string) (int, bool) {
-		option := &trieOpt{}
-		AllowEmpty(true)(option)
-		tt := fnNew(option)
+		tt := fnNew(AllowEmpty(true))
 		tt.Insert(blacklist...)
 		tt.Insert("")
 		return func(text string) (int, bool) {
@@ -241,93 +227,93 @@ func testTrieSearchExactAllowEmpty(t testing.TB, fnNew func(*trieOpt) Trie) {
 }
 
 func TestByteTrieSearchIgnoreCase(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchIgnoreCase(t, fnNew)
 }
 
 func TestRuneTrieSearchIgnoreCase(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchIgnoreCase(t, fnNew)
 }
 
 func TestByteTrieSearchAllIgnoreCase(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchAllIgnoreCase(t, fnNew)
 }
 func TestRuneTrieSearchAllIgnoreCase(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchAllIgnoreCase(t, fnNew)
 }
 
 func TestByteTrieSearchBest(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchBest(t, fnNew)
 }
 func TestRuneTrieSearchBest(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchBest(t, fnNew)
 }
 
 func TestByteTrieSearchPrefixDisableBest(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchPrefixDisableBest(t, fnNew)
 }
 func TestRuneTrieSearchPrefixDisableBest(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchPrefixDisableBest(t, fnNew)
 }
 
 func TestByteTrieSearchPrefixBest(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchPrefixBest(t, fnNew)
 }
 func TestRuneTrieSearchPrefixBest(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchPrefixBest(t, fnNew)
 }
 
 func TestByteTrieSearchPrefixAll(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchPrefixAll(t, fnNew)
 }
 func TestRuneTrieSearchPrefixAll(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchPrefixAll(t, fnNew)
 }
 
 func TestByteTrieSearchExactAllowEmpty(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newByteTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newByteTrie(getOpt(opts...))
 	}
 	testTrieSearchExactAllowEmpty(t, fnNew)
 }
 func TestRuneTrieSearchExactAllowEmpty(t *testing.T) {
-	fnNew := func(option *trieOpt) Trie {
-		return newRuneTrie(option)
+	fnNew := func(opts ...Option) Trie {
+		return newRuneTrie(getOpt(opts...))
 	}
 	testTrieSearchExactAllowEmpty(t, fnNew)
 }

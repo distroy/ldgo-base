@@ -32,21 +32,23 @@ type Trie interface {
 	SearchExact(text string) bool
 }
 
-func NewTrie(opts ...Option) Trie {
-	option := &trieOpt{}
-	for _, opt := range opts {
-		opt(option)
-	}
-	return newRuneTrie(option)
-	// return newByteTrie(option)
+func NewTrie(opts ...Option) Trie          { return newRuneTrie(getOpt(opts...)) }
+func NewRuneTrie(opts ...Option) *RuneTrie { return newRuneTrie(getOpt(opts...)) }
+func NewByteTrie(opts ...Option) *ByteTrie { return newByteTrie(getOpt(opts...)) }
+
+type RuneTrie struct {
+	trie[runeIface, rune]
+}
+type ByteTrie struct {
+	trie[byteIface, byte]
 }
 
-func newRuneTrie(option *trieOpt) *trie[runeIface, rune] { return newTrie[runeIface](option) }
-func newByteTrie(option *trieOpt) *trie[byteIface, byte] { return newTrie[byteIface](option) }
+func newRuneTrie(option trieOpt) *RuneTrie { return &RuneTrie{newTrie[runeIface](option)} }
+func newByteTrie(option trieOpt) *ByteTrie { return &ByteTrie{newTrie[byteIface](option)} }
 
-func newTrie[Iface itemIface[T], T byte | rune](option *trieOpt) *trie[Iface, T] {
-	return &trie[Iface, T]{
-		Option: *option,
+func newTrie[Iface itemIface[T], T byte | rune](option trieOpt) trie[Iface, T] {
+	return trie[Iface, T]{
+		Option: option,
 		Root:   trieNode[T]{
 			// Children: make(map[T]*trieNode[T]),
 		},

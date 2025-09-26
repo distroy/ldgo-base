@@ -32,3 +32,11 @@ func DisableBest(b bool) Option {
 		option.DisableBest = b
 	}
 }
+
+func getOpt(opts ...Option) trieOpt {
+	option := trieOpt{}
+	for _, opt := range opts {
+		opt(&option)
+	}
+	return option
+}
