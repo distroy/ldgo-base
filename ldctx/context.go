@@ -57,6 +57,15 @@ func WithLogger(c context.Context, log *ldlog.Logger, attrs ...ldlog.Attr) conte
 	})
 }
 
+func WithLogOptions(c context.Context, opts ...ldlog.Option) context.Context {
+	if len(opts) == 0 {
+		return c
+	}
+	return ctxWithLogger(c, func(log *ldlog.Logger) *ldlog.Logger {
+		return log.WithOptions(opts...)
+	})
+}
+
 func WithLogAttrs(c context.Context, attrs ...ldlog.Attr) context.Context {
 	if len(attrs) == 0 {
 		return c
