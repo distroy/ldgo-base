@@ -52,7 +52,13 @@ func durationUnmarshalJsonByInt(b []byte) (time.Duration, error) {
 	if b[0] != '0' {
 		str := unsafe.String(unsafe.SliceData(b), len(b))
 		if i64, err := strconv.ParseInt(str, 10, 64); err == nil {
-			return time.Duration(i64), nil
+			return time.Second * time.Duration(i64), nil
+		}
+
+		if f, err := strconv.ParseFloat(str, 64); err == nil {
+			r := time.Second * time.Duration(f)
+			r += time.Second * time.Duration(float64(time.Second)*(f-float64(time.Duration(f))))
+			return time.Duration(f * float64(time.Second)), nil
 		}
 		return 0, durationUnmarshalJSONError(b)
 	}
@@ -66,21 +72,21 @@ func durationUnmarshalJsonByInt(b []byte) (time.Duration, error) {
 		bb := b[2:]
 		str := unsafe.String(unsafe.SliceData(bb), len(bb))
 		if i64, err := strconv.ParseInt(str, 16, 64); err == nil {
-			return time.Duration(i64), nil
+			return time.Second * time.Duration(i64), nil
 		}
 
 	case 'o', 'O':
 		bb := b[2:]
 		str := unsafe.String(unsafe.SliceData(bb), len(bb))
 		if i64, err := strconv.ParseInt(str, 8, 64); err == nil {
-			return time.Duration(i64), nil
+			return time.Second * time.Duration(i64), nil
 		}
 
 	default:
 		bb := b[1:]
 		str := unsafe.String(unsafe.SliceData(bb), len(bb))
 		if i64, err := strconv.ParseInt(str, 8, 64); err == nil {
-			return time.Duration(i64), nil
+			return time.Second * time.Duration(i64), nil
 		}
 	}
 
