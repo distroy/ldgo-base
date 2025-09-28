@@ -8,10 +8,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"strconv"
 	"time"
+	"unsafe"
 
+	"github.com/distroy/ldgo-base/internal/time_"
 	"github.com/distroy/ldgo-base/ldconv"
+	"github.com/distroy/ldgo-base/ldptr"
 )
 
 type Value interface {
@@ -22,6 +26,12 @@ type valueWithDefault interface {
 	Value
 
 	Default() string
+}
+
+type valueWithMeta interface {
+	Value
+
+	Meta() string
 }
 
 func mustMarshalJson(v any) string {
@@ -38,18 +48,125 @@ func mustMarshalJson(v any) string {
 	return ldconv.BytesToStrUnsafe(s)
 }
 
-// duration
-type durationValue time.Duration
+type typeIface[T any] interface {
+	String(v T) string
+	Parse(s string) (T, error)
+}
 
-func newDurationValue(p *time.Duration) *durationValue { return (*durationValue)(p) }
-func (p *durationValue) String() string                { return time.Duration(*p).String() }
-func (p *durationValue) Set(s string) error {
-	v, err := time.ParseDuration(s)
+func getMetaByIface[I typeIface[T], T any](i I) string {
+	switch ii := any(i).(type) {
+	case interface{ Meta() string }:
+		return ii.Meta()
+	}
+	typ := typeFor[T]().String()
+	return fmt.Sprintf("<%s>", typ)
+}
+
+type anyVal[I typeIface[T], T any] struct{ V T }
+
+func newAnyVal[I typeIface[T], T any](p *T) *anyVal[I, T] { return (*anyVal[I, T])(unsafe.Pointer(p)) }
+func (p *anyVal[I, T]) iface() (i I)                      { return i }
+func (p *anyVal[I, T]) Meta() string                      { return getMetaByIface(p.iface()) }
+func (p *anyVal[I, T]) String() string                    { return p.iface().String(p.V) }
+func (p *anyVal[I, T]) Set(s string) error {
+	v, err := p.iface().Parse(s)
 	if err != nil {
 		return err
 	}
-	*p = durationValue(v)
+	p.V = v
 	return nil
+}
+
+type sliceVal[I typeIface[T], T any] []T
+
+func newSliceVal[I typeIface[T], T any](p *[]T) *sliceVal[I, T] { return (*sliceVal[I, T])(p) }
+func (p *sliceVal[I, T]) iface() (i I)                          { return i }
+func (p *sliceVal[I, T]) Meta() string                          { return getMetaByIface(p.iface()) }
+func (p *sliceVal[I, T]) String() string                        { return mustMarshalJson(*p) }
+func (p *sliceVal[I, T]) Set(s string) error {
+	v, err := p.iface().Parse(s)
+	if err != nil {
+		return err
+	}
+	*p = append(*p, v)
+	return nil
+}
+
+type ptrVal[I typeIface[T], T any] struct{ V **T }
+
+func newPtrVal[I typeIface[T], T any](p **T) ptrVal[I, T] { return ptrVal[I, T]{V: p} }
+func (p ptrVal[I, T]) iface() (i I)                       { return i }
+func (p ptrVal[I, T]) Meta() string                       { return getMetaByIface(p.iface()) }
+func (p ptrVal[I, T]) String() string                     { return p.iface().String((ldptr.Get(*p.V))) }
+func (p ptrVal[I, T]) Set(s string) error {
+	v, err := p.iface().Parse(s)
+	if err != nil {
+		return err
+	}
+	*p.V = &v
+	return nil
+}
+
+type stringIface struct{}
+
+func (stringIface) Meta() string                   { return "<string>" }
+func (stringIface) String(v string) string         { return v }
+func (stringIface) Parse(s string) (string, error) { return s, nil }
+
+type boolIface struct{}
+
+func (boolIface) Meta() string                 { return "<bool>" }
+func (boolIface) String(v bool) string         { return strconv.FormatBool(v) }
+func (boolIface) Parse(s string) (bool, error) { return strconv.ParseBool(s) }
+
+type sinteger interface {
+	int | int8 | int16 | int32 | int64
+}
+
+type sintIface[T sinteger] struct{}
+
+func (sintIface[T]) Meta() string      { return "<int>" }
+func (sintIface[T]) String(v T) string { return strconv.FormatInt(int64(v), 10) }
+func (sintIface[T]) Parse(s string) (T, error) {
+	byteSize := sizeFor[T]()
+	v, err := strconv.ParseInt(s, 0, int(byteSize)*8)
+	return T(v), err
+}
+
+type uinteger interface {
+	uint | uint8 | uint16 | uint32 | uint64 | uintptr
+}
+
+type uintIface[T uinteger] struct{}
+
+func (uintIface[T]) Meta() string      { return "<uint>" }
+func (uintIface[T]) String(v T) string { return strconv.FormatUint(uint64(v), 10) }
+func (uintIface[T]) Parse(s string) (T, error) {
+	byteSize := sizeFor[T]()
+	v, err := strconv.ParseUint(s, 0, int(byteSize)*8)
+	return T(v), err
+}
+
+type floatIface[T float32 | float64] struct{}
+
+func (floatIface[T]) Meta() string      { return "<float>" }
+func (floatIface[T]) String(v T) string { return strconv.FormatFloat(float64(v), 'g', -1, 64) }
+func (floatIface[T]) Parse(s string) (T, error) {
+	byteSize := sizeFor[T]()
+	v, err := strconv.ParseFloat(s, byteSize*8)
+	return T(v), err
+}
+
+type durationIface struct{}
+
+func (durationIface) Meta() string                  { return "<duration>" }
+func (durationIface) String(v time.Duration) string { return v.String() }
+func (durationIface) Parse(s string) (time.Duration, error) {
+	b := ldconv.StrToBytesUnsafe(s)
+	if d, err := time_.DurationUnmarshalJsonByNumber(b); err == nil {
+		return d, nil
+	}
+	return time.ParseDuration(s)
 }
 
 // func
@@ -59,209 +176,28 @@ func newFuncValue(f func(string) error) funcValue { return funcValue(f) }
 func (f funcValue) Set(s string) error            { return f(s) }
 func (f funcValue) String() string                { return "" }
 
-// string
-type stringValue string
-
-func newStringValue(p *string) *stringValue { return (*stringValue)(p) }
-func (p *stringValue) String() string       { return string(*p) }
-func (p *stringValue) Set(s string) error {
-	*p = stringValue(s)
-	return nil
-}
-
 // bool
-type boolValue bool
+type boolValue = anyVal[boolIface, bool]
 
-func newBoolValue(p *bool) *boolValue { return (*boolValue)(p) }
-func (p *boolValue) String() string   { return strconv.FormatBool(bool(*p)) }
-func (p *boolValue) Set(s string) error {
-	v, err := strconv.ParseBool(s)
-	// log.Printf(" === %v, %v, %v", *p, v, err)
-	if err != nil {
-		return err
-	}
-	*p = boolValue(v)
-	return nil
-}
+// type boolFlag bool
+type boolFlag struct{ boolValue }
 
-type boolFlag bool
-
-func newBoolFlag(p *boolValue) *boolFlag { return (*boolFlag)(p) }
-func (p *boolFlag) String() string       { return (*boolValue)(p).String() }
-func (p *boolFlag) Set(s string) error   { return (*boolValue)(p).Set(s) }
+func newBoolFlag(p *boolValue) *boolFlag { return (*boolFlag)(unsafe.Pointer(p)) }
+func (p *boolFlag) Meta() string         { return "" }
+func (p *boolFlag) String() string       { return p.boolValue.String() }
+func (p *boolFlag) Set(s string) error   { return p.boolValue.Set(s) }
 func (p *boolFlag) IsBoolFlag() bool     { return true }
 
-// func (p *boolValue) Get() interface{} { return bool(*p) }
-// func (p *boolValue) IsBoolFlag() bool { return true }
+// bool ptr
+type boolPtrValue = ptrVal[boolIface, bool]
 
-// int
-type intValue int
+type boolPtrFlag struct{ boolPtrValue }
 
-func newIntValue(p *int) *intValue { return (*intValue)(p) }
-func (p *intValue) String() string { return strconv.Itoa(int(*p)) }
-func (p *intValue) Set(s string) error {
-	v, err := strconv.Atoi(s)
-	if err != nil {
-		return err
-	}
-	*p = intValue(v)
-	return nil
-}
+func newBoolPtrFlag(p boolPtrValue) boolPtrFlag { return boolPtrFlag{p} }
+func (p boolPtrFlag) Meta() string              { return "" }
+func (p boolPtrFlag) String() string            { return p.boolPtrValue.String() }
+func (p boolPtrFlag) Set(s string) error        { return p.boolPtrValue.Set(s) }
+func (p boolPtrFlag) IsBoolFlag() bool          { return true }
 
-type int64Value int64
-
-func newInt64Value(p *int64) *int64Value { return (*int64Value)(p) }
-func (p *int64Value) String() string     { return strconv.FormatInt(int64(*p), 10) }
-func (p *int64Value) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 64)
-	if err != nil {
-		return err
-	}
-	*p = int64Value(v)
-	return nil
-}
-
-// uint
-type uintValue uint
-
-func newUintValue(p *uint) *uintValue { return (*uintValue)(p) }
-func (p *uintValue) String() string   { return strconv.FormatUint(uint64(*p), 10) }
-func (p *uintValue) Set(s string) error {
-	v, err := strconv.ParseUint(s, 0, strconv.IntSize)
-	if err != nil {
-		return err
-	}
-	*p = uintValue(v)
-	return nil
-}
-
-type uint64Value uint64
-
-func newUint64Value(p *uint64) *uint64Value { return (*uint64Value)(p) }
-func (p *uint64Value) String() string       { return strconv.FormatUint(uint64(*p), 10) }
-func (p *uint64Value) Set(s string) error {
-	v, err := strconv.ParseUint(s, 0, 64)
-	if err != nil {
-		return err
-	}
-	*p = uint64Value(v)
-	return nil
-}
-
-// float
-type float32Value float32
-
-func newFloat32Value(p *float32) *float32Value { return (*float32Value)(p) }
-func (p *float32Value) String() string         { return strconv.FormatFloat(float64(*p), 'g', -1, 64) }
-func (p *float32Value) Set(s string) error {
-	v, err := strconv.ParseFloat(s, 32)
-	if err != nil {
-		return err
-	}
-	*p = float32Value(v)
-	return nil
-}
-
-type float64Value float64
-
-func newFloat64Value(p *float64) *float64Value { return (*float64Value)(p) }
-func (p *float64Value) String() string         { return strconv.FormatFloat(float64(*p), 'g', -1, 64) }
-func (p *float64Value) Set(s string) error {
-	v, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return err
-	}
-	*p = float64Value(v)
-	return nil
-}
-
-// strings
-type stringsValue []string
-
-func newStringsValue(p *[]string) *stringsValue { return (*stringsValue)(p) }
-func (p *stringsValue) String() string          { return mustMarshalJson(*p) }
-func (p *stringsValue) Set(s string) error {
-	*p = append(*p, s)
-	return nil
-}
-
-// ints
-type intsValue []int
-
-func newIntsValue(p *[]int) *intsValue { return (*intsValue)(p) }
-func (p *intsValue) String() string    { return mustMarshalJson(*p) }
-func (p *intsValue) Set(s string) error {
-	v, err := strconv.Atoi(s)
-	if err != nil {
-		return err
-	}
-	*p = append(*p, v)
-	return nil
-}
-
-type int64sValue []int64
-
-func newInt64sValue(p *[]int64) *int64sValue { return (*int64sValue)(p) }
-func (p *int64sValue) String() string        { return mustMarshalJson(*p) }
-func (p *int64sValue) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 64)
-	if err != nil {
-		return err
-	}
-	*p = append(*p, v)
-	return nil
-}
-
-// uints
-type uintsValue []uint
-
-func newUintsValue(p *[]uint) *uintsValue { return (*uintsValue)(p) }
-func (p *uintsValue) String() string      { return mustMarshalJson(*p) }
-func (p *uintsValue) Set(s string) error {
-	v, err := strconv.ParseUint(s, 0, strconv.IntSize)
-	if err != nil {
-		return err
-	}
-	*p = append(*p, uint(v))
-	return nil
-}
-
-type uint64sValue []uint64
-
-func newUint64sValue(p *[]uint64) *uint64sValue { return (*uint64sValue)(p) }
-func (p *uint64sValue) String() string          { return mustMarshalJson(*p) }
-func (p *uint64sValue) Set(s string) error {
-	v, err := strconv.ParseUint(s, 0, 64)
-	if err != nil {
-		return err
-	}
-	*p = append(*p, v)
-	return nil
-}
-
-// floats
-type float32sValue []float32
-
-func newFloat32sValue(p *[]float32) *float32sValue { return (*float32sValue)(p) }
-func (p *float32sValue) String() string            { return mustMarshalJson(*p) }
-func (p *float32sValue) Set(s string) error {
-	v, err := strconv.ParseFloat(s, 32)
-	if err != nil {
-		return err
-	}
-	*p = append(*p, float32(v))
-	return nil
-}
-
-type float64sValue []float64
-
-func newFloat64sValue(p *[]float64) *float64sValue { return (*float64sValue)(p) }
-func (p *float64sValue) String() string            { return mustMarshalJson(*p) }
-func (p *float64sValue) Set(s string) error {
-	v, err := strconv.ParseFloat(s, 64)
-	if err != nil {
-		return err
-	}
-	*p = append(*p, v)
-	return nil
-}
+// func (p *boolPtrValue) Get() interface{} { return bool(*p) }
+// func (p *boolPtrValue) IsBoolFlag() bool { return true }
