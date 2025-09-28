@@ -10,7 +10,8 @@ import (
 	"log"
 	"reflect"
 	"strings"
-	"unicode"
+
+	"github.com/distroy/ldgo-base/ldstr"
 )
 
 const (
@@ -62,50 +63,9 @@ func WriteUsage(w io.Writer) { defaultFlagSet.WriteUsage(w) }
 
 func parseFlagName(f reflect.StructField) string {
 	name := f.Name
-	name = splitStringWord(name, '-')
+	name = ldstr.ToSnakeCase(name, '-')
 	name = strings.ToLower(name)
 	return name
-}
-
-func splitStringWord(s string, sep rune) string {
-	runes := []rune(s)
-	if len(runes) == 0 {
-		return ""
-	}
-
-	res := make([]rune, 0, len(runes)*2)
-	for i := 0; i < len(runes); i++ {
-		curr := runes[i]
-		if !unicode.IsUpper(curr) {
-			res = append(res, curr)
-			continue
-		}
-
-		if i > 0 {
-			res = append(res, sep)
-		}
-
-		last := curr
-		j := i + 1
-		for ; j < len(runes); j++ {
-			curr := runes[j]
-			if unicode.IsUpper(curr) {
-				res = append(res, last)
-				last = curr
-				continue
-			}
-
-			if j > i+1 {
-				res = append(res, sep)
-			}
-			res = append(res, last)
-			last = curr
-			break
-		}
-		res = append(res, last)
-		i = j
-	}
-	return string(res)
 }
 
 func packMeta(meta string) string {
@@ -141,25 +101,9 @@ func unquoteUsage(f *Flag) (meta string, usage string) {
 
 	// No explicit name, so use type if we can find one.
 	meta = "<value>"
-	switch f.Value.(type) {
-	case *boolFlag, boolPtrFlag:
-		meta = ""
-	case *boolValue, boolPtrValue:
-		meta = "<bool>"
-	case *durationValue, durationPtrValue:
-		meta = "<duration>"
-	case *float32Value, *float64Value, *float32sValue, *float64sValue,
-		float32PtrValue, float64PtrValue:
-		meta = "<float>"
-	case *intValue, *int64Value, *intsValue, *int64sValue,
-		intPtrValue, int64PtrValue:
-		meta = "<int>"
-	case *stringValue, *stringsValue, stringPtrValue:
-		meta = "<string>"
-
-	case *uintValue, *uint64Value, *uintsValue, *uint64sValue,
-		uintPtrValue, uint64PtrValue:
-		meta = "<uint>"
+	switch v := f.Value.(type) {
+	case valueWithMeta:
+		meta = v.Meta()
 	}
 	return meta, usage
 }
@@ -206,7 +150,7 @@ func isFlagDefaultZero(f *Flag) bool {
 
 		z, _ := v.Interface().(Value)
 		if z == nil {
-			z = fillFlagFuncMap[typ](v)
+			z = newValFuncMap[typ](v)
 		}
 		return defaultValue == z.String()
 	}

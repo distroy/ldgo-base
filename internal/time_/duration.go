@@ -28,7 +28,7 @@ func DurationUnmarshalJson(b []byte) (time.Duration, error) {
 		return durationUnmarshalJsonByStr(b)
 	}
 
-	return durationUnmarshalJsonByInt(b)
+	return durationUnmarshalJsonByNumber(b)
 }
 
 func durationUnmarshalJSONError(b []byte) error {
@@ -48,7 +48,10 @@ func durationUnmarshalJsonByStr(b []byte) (time.Duration, error) {
 	return dur, nil
 }
 
-func durationUnmarshalJsonByInt(b []byte) (time.Duration, error) {
+func DurationUnmarshalJsonByNumber(b []byte) (time.Duration, error) {
+	return durationUnmarshalJsonByNumber(b)
+}
+func durationUnmarshalJsonByNumber(b []byte) (time.Duration, error) {
 	if b[0] != '0' {
 		str := unsafe.String(unsafe.SliceData(b), len(b))
 		if i64, err := strconv.ParseInt(str, 10, 64); err == nil {

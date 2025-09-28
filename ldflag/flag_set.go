@@ -180,11 +180,12 @@ func (s *FlagSet) writeFlagUsageDefault(b io.Writer, f *Flag, usagePrefix, tab s
 			fmt.Fprint(b, " ", f.Default)
 		}
 
-	case *stringValue, *stringPtrValue:
+	// case *stringValue, *stringPtrValue:
+	case *anyVal[stringIface, string], *ptrVal[stringIface, string]:
 		// fmt.Fprintf(b, " (default: %q)", f.Default)
 		fmt.Fprint(b, " ", f.Default)
 
-	case *stringsValue:
+	case *sliceVal[stringIface, string]:
 		for _, s := range *v {
 			fmt.Fprintf(b, "\n%s%q", defaultPrefix, s)
 		}
@@ -338,7 +339,7 @@ func (s *FlagSet) getFlagValue(f *Flag) (flagVal Value, refVal reflect.Value) {
 	typ := val.Type()
 	// log.Printf(" === 2222 %#v", m)
 
-	fn := fillFlagFuncMap[typ]
+	fn := newValFuncMap[typ]
 	if fn == nil {
 		return nil, val
 	}
