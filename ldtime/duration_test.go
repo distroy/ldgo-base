@@ -72,7 +72,7 @@ func TestDuration(t *testing.T) {
 				p := &Object{}
 				err := json.Unmarshal([]byte(str), p)
 				c.So(err, convey.ShouldBeNil)
-				c.So(p, convey.ShouldResemble, &Object{Timeout: 12345})
+				c.So(p, convey.ShouldResemble, &Object{Timeout: 12345 * Duration(time.Second)})
 			})
 		})
 	})
