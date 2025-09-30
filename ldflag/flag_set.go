@@ -11,7 +11,6 @@ import (
 	"os"
 	"reflect"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/distroy/ldgo-base/ldtags"
@@ -23,6 +22,7 @@ type Flag struct {
 	tags ldtags.Tags
 
 	Name    string
+	Short   string
 	Value   Value
 	Meta    string
 	Default string
@@ -133,7 +133,11 @@ func (s *FlagSet) writeFlagUsage(w io.Writer, f *Flag) {
 
 	b := &strings.Builder{}
 
-	fmt.Fprintf(b, "%s-%s", namePrefix, f.Name) // Two spaces before -; see next two comments.
+	if f.Short != "" {
+		fmt.Fprintf(b, "%s-%s/-%s", namePrefix, f.Short, f.Name) // Two spaces before -; see next two comments.
+	} else {
+		fmt.Fprintf(b, "%s-%s", namePrefix, f.Name) // Two spaces before -; see next two comments.
+	}
 	meta, usage := unquoteUsage(f)
 	if len(meta) > 0 {
 		fmt.Fprintf(b, " %s", meta)
@@ -202,16 +206,6 @@ func (s *FlagSet) writeFlagUsageOptions(b io.Writer, f *Flag, usagePrefix string
 	// }
 	// fmt.Fprintf(b, " [options: %s]", strings.Join(f.Options, ","))
 	fmt.Fprintf(b, "\n%soptions: %s", usagePrefix, strings.Join(f.Options, ","))
-}
-
-func (s *FlagSet) sortedFlags() []*Flag {
-	res := make([]*Flag, len(s.flagSlice))
-	copy(res, s.flagSlice)
-
-	sort.Slice(res, func(i, j int) bool {
-		return res[i].Name < res[j].Name
-	})
-	return res
 }
 
 func (s *FlagSet) MustParse(args ...[]string) {
@@ -316,7 +310,10 @@ func (s *FlagSet) addFlag(f *Flag) {
 		}
 	}
 
-	s.command.Var(v, f.Name, f.Usage)
+	if f.Short != "" {
+		s.command.Var(v, f.Short, "")
+	}
+	s.command.Var(v, f.Name, "")
 	s.flagSlice = append(s.flagSlice, f)
 	s.flagMap[f.Name] = f
 	// log.Printf(" === %s: %v", typ.String(), val.Interface())
@@ -410,6 +407,7 @@ func (s *FlagSet) parseFieldFlag(lvl int, val reflect.Value, field reflect.Struc
 		val:     val,
 		tags:    tags,
 		Name:    tags.Get("name"),
+		Short:   tags.Get("short"),
 		Meta:    tags.Get("meta"),
 		Usage:   tags.Get("usage"),
 		Default: strings.TrimSpace(tags.Get("default")),
@@ -422,13 +420,12 @@ func (s *FlagSet) parseFieldFlag(lvl int, val reflect.Value, field reflect.Struc
 	// 	f.Default = f.Options[0]
 	// }
 
-	if len(f.Name) == 0 {
+	if f.Name == "" {
 		f.Name = parseFlagName(field)
 	}
 	// log.Printf(" === 1111 %#v", m)
 
 	s.addFlag(f)
-	return
 }
 
 func (s *FlagSet) parseOptions(str string) []string {

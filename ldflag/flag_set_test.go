@@ -96,7 +96,7 @@ func TestFlagSet_wrigeUsage(t *testing.T) {
 			type Flags struct {
 				Top      int      `ldflag:"name:top; meta:N; usage:show the top <N>"`
 				Avg      bool     `ldflag:"usage:show the average complexity"`
-				DebugLog bool     `ldflag:"usage:print debug log; bool"`
+				DebugLog bool     `ldflag:"short:d; usage:print debug log; bool"`
 				Rate     float64  `ldflag:"default:0.65; usage:"`
 				Branch   string   `ldflag:"meta:branch; usage:git branch name"`
 				Includes []string `ldflag:"name:include; meta:regexp; usage:include file regexps"`
@@ -120,7 +120,7 @@ Flags:
                 show the top <N>
         -avg <bool>
                 show the average complexity
-        -debug-log
+        -d/-debug-log
                 print debug log
         -rate <float>
                 default: 0.65
@@ -239,7 +239,7 @@ func TestFlagSet_Model(t *testing.T) {
 	type Flags struct {
 		Top      int          `ldflag:"name:top; meta:N; usage:show the top <N>"`
 		Avg      bool         `ldflag:"usage:show the average complexity"`
-		DebugLog bool         `ldflag:"usage:print debug log; bool"`
+		DebugLog bool         `ldflag:"short:d; usage:print debug log; bool"`
 		Rate     float64      `ldflag:"default:0.65; usage:"`
 		Branch   string       `ldflag:"meta:branch; usage:git branch name"`
 		Pathes   []string     `ldflag:"args; meta:path; default:."`
@@ -276,6 +276,7 @@ func TestFlagSet_Model(t *testing.T) {
 				{
 					lvl:     0,
 					Name:    "debug-log",
+					Short:   "d",
 					Meta:    "",
 					Default: "false",
 					Usage:   "print debug log",
@@ -354,7 +355,7 @@ func TestFlagSet_Parse(t *testing.T) {
 				Over     *int     `ldflag:"name:over; meta:N; default:15; usage:show functions with complexity <N>"`
 				Top      *int     `ldflag:"name:top; meta:N; usage:show the top <N>"`
 				Avg      *bool    `ldflag:"usage:show the average complexity"`
-				DebugLog *bool    `ldflag:"usage:print debug log; bool"`
+				DebugLog *bool    `ldflag:"short:d; usage:print debug log; bool"`
 				Rate     *float64 `ldflag:"default:0.65; usage:"`
 				Branch   *string  `ldflag:"meta:branch; usage:git branch name"`
 				Pathes   []string `ldflag:"args; meta:path; default:."`
@@ -367,7 +368,7 @@ func TestFlagSet_Parse(t *testing.T) {
 				err := s.Parse([]string{
 					"-top", "5",
 					"-avg", "1",
-					"-debug-log",
+					"-d",
 				})
 				c.So(err, convey.ShouldBeNil)
 				c.So(flags, convey.ShouldResemble, &Flags{
