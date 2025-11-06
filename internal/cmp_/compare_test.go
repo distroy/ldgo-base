@@ -25,6 +25,10 @@ func TestCompare(t *testing.T) {
 			c.So(Compare(0, []int{}), convey.ShouldEqual, -1)
 		})
 
+		c.Convey("nil", func(c convey.C) {
+			c.So(Compare(nil, nil), convey.ShouldEqual, 0)
+		})
+
 		c.Convey("bool", func(c convey.C) {
 			c.So(Compare(false, true), convey.ShouldEqual, -1)
 			c.So(Compare(true, false), convey.ShouldEqual, 1)
