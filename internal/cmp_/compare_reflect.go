@@ -42,7 +42,7 @@ func refValueOf(v any) reflect.Value {
 }
 
 func CompareReflect(a, b reflect.Value) int {
-	if r := compareReflectType(a, b); r != 0 {
+	if r, isNil := compareReflectType(a, b); r != 0 || isNil {
 		return r
 	}
 
@@ -143,34 +143,31 @@ func convertKind(k reflect.Kind) kind {
 	}
 }
 
-func compareReflectType(a, b reflect.Value) int {
+func compareReflectType(a, b reflect.Value) (int, bool) {
 	aKind := convertKind(a.Kind())
 	bKind := convertKind(b.Kind())
 	if aKind != kindOrthers && aKind == bKind {
-		return 0
+		return 0, aKind == kindNil
 	}
 
 	if aKind != kindOrthers || bKind != kindOrthers {
-		return CompareInteger(aKind, bKind)
+		return CompareInteger(aKind, bKind), false
 	}
 
 	aType := a.Type()
 	bType := b.Type()
 
 	if aType == bType {
-		return 0
+		return 0, false
 	}
 
 	aName := aType.String()
 	bName := bType.String()
 	if r := CompareInteger(len(aName), len(bName)); r != 0 {
-		return r
+		return r, false
 	}
 
-	if aName < bName {
-		return -1
-	}
-	return 1
+	return CompareString(aName, bName), false
 }
 
 func compareNilReflect(a, b reflect.Value) (int, bool) {
