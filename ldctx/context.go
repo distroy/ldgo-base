@@ -46,14 +46,21 @@ func GetError(c context.Context) error {
 }
 
 func WithLogger(c context.Context, log *ldlog.Logger, attrs ...ldlog.Attr) context.Context {
-	if c == nil {
-		c = Default()
-	}
+	c = getCtx(c)
 	if log == nil {
 		return WithLogAttrs(c, attrs...)
 	}
 	return ctxWithLogger(c, func(_ *ldlog.Logger) *ldlog.Logger {
 		return log.With(attrs...)
+	})
+}
+
+func WithLogOptions(c context.Context, opts ...ldlog.Option) context.Context {
+	if len(opts) == 0 {
+		return c
+	}
+	return ctxWithLogger(c, func(log *ldlog.Logger) *ldlog.Logger {
+		return log.WithOptions(opts...)
 	})
 }
 
@@ -82,6 +89,13 @@ func WithSequence(c context.Context, seq string) context.Context {
 }
 
 func GetSequence(c context.Context) string { return GetLogger(c).Sequence() }
+
+func getCtx(c context.Context) context.Context {
+	if c == nil {
+		return Default()
+	}
+	return c
+}
 
 func ctxWithLogger(c context.Context, fnLog func(log *ldlog.Logger) *ldlog.Logger) context.Context {
 	old := GetLogger(c)
@@ -117,4 +131,14 @@ func WithTimeout(parent context.Context, timeout time.Duration) (context.Context
 
 func WithDeadline(parent context.Context, deadline time.Time) (context.Context, CancelFunc) {
 	return context.WithDeadline(parent, deadline)
+}
+
+func WithoutCancel(parent context.Context) context.Context {
+	if parent == nil {
+		return Default()
+	}
+	if _, ok := parent.Deadline(); !ok && parent.Done() == nil && parent.Err() == nil {
+		return parent
+	}
+	return context.WithoutCancel(parent)
 }

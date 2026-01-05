@@ -41,9 +41,19 @@ func TestToSnakeCase(t *testing.T) {
 			want: "http_request",
 		},
 		{
+			str:  "HTTP_Request",
+			sep:  0,
+			want: "http_request",
+		},
+		{
 			str:  "HTTPRequest",
 			sep:  '-',
 			want: "http-request",
+		},
+		{
+			str:  "HTTP2Request",
+			sep:  0,
+			want: "http2_request",
 		},
 		{
 			str:  "struct A",
@@ -91,6 +101,14 @@ func TestToCamelCase(t *testing.T) {
 		{
 			str:  "  HTTP Request  ",
 			want: "HTTPRequest",
+		},
+		{
+			str:  "HTTP 2 Request",
+			want: "HTTP2Request",
+		},
+		{
+			str:  "HTTP2 Request",
+			want: "HTTP2Request",
 		},
 		{
 			str:  "struct-a",

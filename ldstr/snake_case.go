@@ -45,36 +45,43 @@ func toSnakeCase(s []byte, sep rune) []byte {
 	}
 
 	loopReadRunes(reader, func(i, size int, curr rune) bool {
-		if unicode.IsSpace(curr) {
+		switch {
+		case unicode.IsSpace(curr):
 			writeRune(sep)
 			return true
 
-		} else if !unicode.IsUpper(curr) {
+		case !unicode.IsUpper(curr):
 			writeRune(curr)
 			return true
 
-		} else if i > 0 {
+		case i > 0:
 			writeRune(sep)
 		}
 
 		last := unicode.ToLower(curr)
 		loopReadRunes(reader, func(i, _ int, curr rune) bool {
-			if unicode.IsSpace(curr) {
+			switch {
+			case unicode.IsSpace(curr):
 				writeRune(last)
 				last = sep
 				return false
 
-			} else if unicode.IsUpper(curr) {
+			case unicode.IsUpper(curr):
 				writeRune(last)
 				last = unicode.ToLower(curr)
 				return true
 
-			} else if i > 0 {
+			case !unicode.IsLower(curr):
+				writeRune(last)
+				last = curr
+				return false
+
+			case i > 0:
 				writeRune(sep)
 			}
 
 			writeRune(last)
-			last = unicode.ToLower(curr)
+			last = curr
 			return false
 		})
 		writeRune(last)
@@ -108,16 +115,17 @@ func toCamelCase(s []byte, seps []rune) []byte {
 
 	lastSep := true
 	loopReadRunes(reader, func(i, size int, curr rune) bool {
-		if unicode.IsSpace(curr) || ldsort.IndexInt32s(seps, curr) >= 0 {
+		switch {
+		case unicode.IsSpace(curr) || ldsort.IndexInt32s(seps, curr) >= 0:
 			lastSep = true
 			return true
 
-		} else if unicode.IsUpper(curr) {
+		case unicode.IsUpper(curr):
 			lastSep = false
 			writer = utf8.AppendRune(writer, curr)
 			return true
 
-		} else if lastSep {
+		case lastSep:
 			lastSep = false
 			curr = unicode.ToUpper(curr)
 			writer = utf8.AppendRune(writer, curr)

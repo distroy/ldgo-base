@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"time"
 
 	"github.com/distroy/ldgo-base/ldsync"
 )
@@ -226,10 +225,6 @@ func (s *handleState) appendValue(v Value) {
 	if err != nil {
 		s.appendError(err)
 	}
-}
-
-func (s *handleState) appendTime(t time.Time) {
-	s.buf.WriteTime(t, "")
 }
 
 func (s *handleState) appendNonBuiltIns(r Record) {
