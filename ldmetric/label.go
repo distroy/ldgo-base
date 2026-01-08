@@ -150,34 +150,25 @@ func (t *typeInfo) getReportFunc() (_report func(v reflect.Value, t *typeInfo), 
 
 func (t *typeInfo) getMetricInfo() *typeMetricField {
 	mf := t.metricField
-	if mf != nil {
-		return mf
+	if mf == nil {
+		mf = &typeMetricField{Index: -1}
+		t.metricField = mf
 	}
-	// if mf == nil {
-	mf = &typeMetricField{Index: -1}
-	t.metricField = mf
-	// }
 
 	v := reflect.New(t.Type).Interface()
 
-	if mf.MetricType == "" {
-		if vv, _ := v.(interface{ MetricType() string }); vv != nil {
-			mf.MetricType = vv.MetricType()
-		}
+	if vv, _ := v.(interface{ MetricType() string }); vv != nil {
+		mf.MetricType = vv.MetricType()
 	}
 
-	if mf.MetricName == "" {
-		if vv, _ := v.(interface{ MetricName() string }); vv != nil {
-			mf.MetricName = vv.MetricName()
-		} else {
-			mf.MetricName = getMetricPrefix() + ldstr.ToSnakeCase(t.Type.Name())
-		}
+	if vv, _ := v.(interface{ MetricName() string }); vv != nil {
+		mf.MetricName = vv.MetricName()
+	} else if mf.MetricName == "" {
+		mf.MetricName = getMetricPrefix() + ldstr.ToSnakeCase(t.Type.Name())
 	}
 
-	if mf.MetricAction == "" {
-		if vv, _ := v.(interface{ MetricAction() string }); vv != nil {
-			mf.MetricAction = vv.MetricAction()
-		}
+	if vv, _ := v.(interface{ MetricAction() string }); vv != nil {
+		mf.MetricAction = vv.MetricAction()
 	}
 
 	if vv, _ := v.(interface{ MetricBuckets() []float64 }); vv != nil {

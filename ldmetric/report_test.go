@@ -6,6 +6,7 @@ package ldmetric
 
 import (
 	"testing"
+	"time"
 
 	"github.com/distroy/ldgo-base/3rd/convey"
 )
@@ -20,6 +21,20 @@ func (_ testMetricWithMethod) MetricName() string       { return "meter_normal_m
 func (_ testMetricWithMethod) MetricAction() string     { return "store" }
 func (_ testMetricWithMethod) MetricBuckets() []float64 { return []float64{1} }
 func (_ testMetricWithMethod) MetricObjectives() map[float64]float64 {
+	return map[float64]float64{1: 1}
+}
+
+type testMetricWithMethodPtr struct {
+	Latency time.Duration `ldmetric:"type:histogram"`
+	Index   int64
+	Queue   string
+}
+
+func (_ *testMetricWithMethodPtr) MetricType() string       { return "meter" }
+func (_ *testMetricWithMethodPtr) MetricName() string       { return "meter_normal_metric_ptr" }
+func (_ *testMetricWithMethodPtr) MetricAction() string     { return "store" }
+func (_ *testMetricWithMethodPtr) MetricBuckets() []float64 { return []float64{1} }
+func (_ *testMetricWithMethodPtr) MetricObjectives() map[float64]float64 {
 	return map[float64]float64{1: 1}
 }
 
@@ -70,6 +85,45 @@ func TestReport(t *testing.T) {
 					`queue`: "test_queue",
 				},
 				value: 1,
+				reset: 1,
+			})
+		})
+
+		c.Convey("with method (ptr)", func(c convey.C) {
+			Report(&testMetricWithMethodPtr{
+				Latency: time.Second * 3,
+				Index:   3,
+				Queue:   "test_queue",
+			})
+			c.So(adaptor, convey.ShouldResemble, &testAdaptor{
+				metricInfo: &MetricInfo{
+					Type:       "meter",
+					Metric:     "meter_normal_metric_ptr",
+					Action:     "store",
+					Buckets:    []float64{1},
+					Objectives: map[float64]float64{1: 1},
+				},
+				labels: map[string]string{
+					`index`: "3",
+					`queue`: "test_queue",
+				},
+				value: 3,
+				reset: 0,
+			})
+			ResetReporter(&testMetricWithMethodPtr{})
+			c.So(adaptor, convey.ShouldResemble, &testAdaptor{
+				metricInfo: &MetricInfo{
+					Type:       "meter",
+					Metric:     "meter_normal_metric_ptr",
+					Action:     "store",
+					Buckets:    []float64{1},
+					Objectives: map[float64]float64{1: 1},
+				},
+				labels: map[string]string{
+					`index`: "3",
+					`queue`: "test_queue",
+				},
+				value: 3,
 				reset: 1,
 			})
 		})
