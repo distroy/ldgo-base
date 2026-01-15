@@ -11,11 +11,12 @@ import (
 	"time"
 
 	"github.com/distroy/ldgo-base/3rd/convey"
+	"github.com/distroy/ldgo-base/3rd/yaml"
 )
 
 func TestDuration(t *testing.T) {
 	type Object struct {
-		Timeout Duration `json:"timeout"`
+		Timeout Duration `json:"timeout" yaml:"timeout"`
 	}
 	convey.Convey(t.Name(), t, func(c convey.C) {
 		d0 := Duration(123456789)
@@ -74,6 +75,29 @@ func TestDuration(t *testing.T) {
 				c.So(err, convey.ShouldBeNil)
 				c.So(p, convey.ShouldResemble, &Object{Timeout: 12345 * Duration(time.Second)})
 			})
+		})
+		c.Convey("yaml marshal", func(c convey.C) {
+			p := &Object{Timeout: 123456789}
+			raw, err := yaml.Marshal(p)
+			c.So(err, convey.ShouldBeNil)
+			c.So(string(raw), convey.ShouldEqual, fmt.Sprintf("timeout: %s\n", p.Timeout.get().String()))
+		})
+		c.Convey("yaml unmarshal", func(c convey.C) {
+			c.Convey("string", func(c convey.C) {
+				// str := `{"timeout": "2h1m"}`
+				str := "timeout: 2h1m\n"
+				p := &Object{}
+				err := yaml.Unmarshal([]byte(str), p)
+				c.So(err, convey.ShouldBeNil)
+				c.So(p, convey.ShouldResemble, &Object{Timeout: Duration(time.Hour*2 + time.Minute*1)})
+			})
+			// c.Convey("number", func(c convey.C) {
+			// 	str := "timeout: 12345\n"
+			// 	p := &Object{}
+			// 	err := json.Unmarshal([]byte(str), p)
+			// 	c.So(err, convey.ShouldBeNil)
+			// 	c.So(p, convey.ShouldResemble, &Object{Timeout: 12345 * Duration(time.Second)})
+			// })
 		})
 	})
 }
