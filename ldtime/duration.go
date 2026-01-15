@@ -5,9 +5,19 @@
 package ldtime
 
 import (
+	"encoding/json"
 	"time"
 
+	"github.com/distroy/ldgo-base/3rd/yaml"
 	"github.com/distroy/ldgo-base/internal/time_"
+	"github.com/distroy/ldgo-base/ldconv"
+)
+
+var (
+	_ json.Marshaler   = (*Duration)(nil)
+	_ json.Unmarshaler = (*Duration)(nil)
+	_ yaml.Marshaler   = (*Duration)(nil)
+	_ yaml.Unmarshaler = (*Duration)(nil)
 )
 
 type Duration time.Duration
@@ -33,5 +43,19 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	if err == nil {
 		*d.ptr() = dur
 	}
+	return err
+}
+
+func (d Duration) MarshalYAML() (any, error) { return d.String(), nil }
+func (d *Duration) UnmarshalYAML(n *yaml.Node) error {
+	// log.Printf(" === UnmarshalYAML: %s", n.Value)
+	s := n.Value
+	b := ldconv.StrToBytesUnsafe(s)
+	if dur, err := time_.ParseDurationByNumber(b); err == nil {
+		*d.ptr() = dur
+		return nil
+	}
+	dur, err := time.ParseDuration(s)
+	*d.ptr() = dur
 	return err
 }

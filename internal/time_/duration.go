@@ -48,7 +48,7 @@ func durationUnmarshalJsonByStr(b []byte) (time.Duration, error) {
 	return dur, nil
 }
 
-func DurationUnmarshalJsonByNumber(b []byte) (time.Duration, error) {
+func ParseDurationByNumber(b []byte) (time.Duration, error) {
 	return durationUnmarshalJsonByNumber(b)
 }
 func durationUnmarshalJsonByNumber(b []byte) (time.Duration, error) {

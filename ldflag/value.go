@@ -163,7 +163,7 @@ func (durationIface) Meta() string                  { return "<duration>" }
 func (durationIface) String(v time.Duration) string { return v.String() }
 func (durationIface) Parse(s string) (time.Duration, error) {
 	b := ldconv.StrToBytesUnsafe(s)
-	if d, err := time_.DurationUnmarshalJsonByNumber(b); err == nil {
+	if d, err := time_.ParseDurationByNumber(b); err == nil {
 		return d, nil
 	}
 	return time.ParseDuration(s)
