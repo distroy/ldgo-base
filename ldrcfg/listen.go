@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/distroy/ldgo-base/internal/ctx_"
 	"github.com/distroy/ldgo-base/ldctx"
 	"github.com/distroy/ldgo-base/ldlog"
-	"github.com/distroy/ldgo-base/ldrand"
 )
 
 type listenData struct {
@@ -42,7 +42,7 @@ func (c *Client) newSequence() string {
 	if cli != nil {
 		return cli.NewSequence()
 	}
-	return ldrand.String(16)
+	return ctx_.NewSequence()
 }
 
 func (c *Client) getContext() context.Context {
