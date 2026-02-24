@@ -22,6 +22,27 @@ type (
 	float64s = slice[float64]
 )
 
+type Integer interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+type Float interface {
+	~float32 | ~float64
+}
+
+func SortIntegers[T Integer](a []T)            { internalSort(slice[T](a)) }
+func UniqIntegers[T Integer](a []T) []T        { return a[:uniq(slice[T](a))] }
+func IsSortedIntegers[T Integer](a []T) bool   { return internalIsSorted(slice[T](a)) }
+func SearchIntegers[T Integer](a []T, x T) int { return templateSearch(a, x) }
+func IndexIntegers[T Integer](a []T, x T) int  { return templateIndex(a, x) }
+
+func SortFloats[T Float](a []T)            { internalSort(slice[T](a)) }
+func UniqFloats[T Float](a []T) []T        { return a[:uniq(slice[T](a))] }
+func IsSortedFloats[T Float](a []T) bool   { return internalIsSorted(slice[T](a)) }
+func SearchFloats[T Float](a []T, x T) int { return templateSearch(a, x) }
+func IndexFloats[T Float](a []T, x T) int  { return templateIndex(a, x) }
+
 func SortInts(a []int)              { internalSort(ints(a)) }
 func UniqInts(a []int) []int        { return a[:uniq(ints(a))] }
 func IsSortedInts(a []int) bool     { return internalIsSorted(ints(a)) }
