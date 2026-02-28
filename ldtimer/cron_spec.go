@@ -6,92 +6,44 @@ package ldtimer
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/distroy/ldgo-base/ldsort"
+	"github.com/distroy/ldgo-base/ldtime"
 )
 
 // CronSpec 表示解析后的 cron 时间规格
 type CronSpec struct {
-	Minute     []int // 0-59
-	Hour       []int // 0-23
-	DayOfMonth []int // 1-31
-	Month      []int // 1-12
-	DayOfWeek  []int // 0-6 (0=星期日)
+	Minute     uint64 // 0-59
+	Hour       uint64 // 0-23
+	DayOfMonth uint64 // 1-31
+	Month      uint64 // 1-12
+	DayOfWeek  uint64 // 0-6 (0=星期日)
 }
 
-// Matches 检查给定的时间是否匹配 CronSpec（可选辅助方法）
-func (s *CronSpec) Matches(minute, hour, day, month, weekday int) bool {
-	return slices.Contains(s.Minute, minute) &&
-		slices.Contains(s.Hour, hour) &&
-		slices.Contains(s.DayOfMonth, day) &&
-		slices.Contains(s.Month, month) &&
-		slices.Contains(s.DayOfWeek, weekday)
+// match 检查给定的时间是否匹配 CronSpec（可选辅助方法）
+func (s *CronSpec) match(minute, hour, day, month, weekday int) bool {
+	return 0 != (1 & (s.Minute >> minute) & (s.Hour >> hour) & (s.DayOfMonth >> day) &
+		(s.Month >> month) & (s.DayOfWeek >> weekday))
 }
 
-// NextRun 计算下一次运行时间
-func (s *CronSpec) NextRun(from time.Time) time.Time {
-	next := from.Add(1 * time.Minute)
-	next = time.Date(next.Year(), next.Month(), next.Day(), next.Hour(), next.Minute(), 0, 0, next.Location())
-
-	for i := 0; i < 100000; i++ { // 防止无限循环
-		if s.MatchTime(next) {
+// Next 计算下一次运行时间
+func (s *CronSpec) Next(from time.Time) time.Time {
+	next := ldtime.MinuteBegin(from)
+	for range 100000 { // 防止无限循环
+		next = next.Add(1 * time.Minute)
+		if s.Match(next) {
 			return next
 		}
-		next = next.Add(1 * time.Minute)
 	}
 
 	return time.Time{}
 }
 
-// Matches 检查给定时间是否匹配计划
-func (s *CronSpec) MatchTime(t time.Time) bool {
-	// 检查分钟
-	if !slices.Contains(s.Minute, t.Minute()) {
-		return false
-	}
-
-	// 检查小时
-	if !slices.Contains(s.Hour, t.Hour()) {
-		return false
-	}
-
-	// 检查月份
-	if !slices.Contains(s.Month, int(t.Month())) {
-		return false
-	}
-
-	// 检查日期和星期几的特殊逻辑
-	dayMatch := slices.Contains(s.DayOfMonth, t.Day())
-	weekdayMatch := slices.Contains(s.DayOfWeek, int(t.Weekday()))
-
-	// 特殊处理最后一天 (L)
-	if slices.Contains(s.DayOfMonth, -1) {
-		// 获取当月的最后一天
-		nextMonth := time.Date(t.Year(), t.Month()+1, 1, 0, 0, 0, 0, t.Location())
-		lastDay := nextMonth.Add(-24 * time.Hour).Day()
-		if t.Day() == lastDay {
-			dayMatch = true
-		}
-	}
-
-	// cron 特殊规则：如果日期和星期几都被指定，匹配任意一个即可
-	// 如果只有其中一个被指定，则必须匹配该字段
-	daySpecified := !(len(s.DayOfMonth) == 31 && !slices.Contains(s.DayOfMonth, -1)) // 不是全匹配且不是 L
-	weekdaySpecified := len(s.DayOfWeek) < 7 || slices.Contains(s.DayOfWeek, 7)      // 不是全匹配
-
-	if daySpecified && weekdaySpecified {
-		return dayMatch || weekdayMatch
-	} else if daySpecified {
-		return dayMatch
-	} else if weekdaySpecified {
-		return weekdayMatch
-	}
-
-	return true
+// Match 检查给定时间是否匹配计划
+func (s *CronSpec) Match(t time.Time) bool {
+	return s.match(t.Minute(), t.Hour(), t.Day(), int(t.Month()), int(t.Weekday()))
 }
 
 // String 返回可读的 cron 表达式
@@ -151,10 +103,10 @@ func ParseCronExpr(cronExpr string) (*CronSpec, error) {
 }
 
 // parseField 解析单个字段（通用）
-func parseField(field string, min, max int, aliases map[string]int) ([]int, error) {
+func parseField(field string, min, max int, aliases map[string]int) (uint64, error) {
 	field = strings.TrimSpace(field)
 	if field == "" {
-		return nil, fmt.Errorf("empty field")
+		return 0, fmt.Errorf("empty field")
 	}
 
 	// 处理 *
@@ -166,7 +118,7 @@ func parseField(field string, min, max int, aliases map[string]int) ([]int, erro
 	if strings.HasPrefix(field, "*/") {
 		step, err := strconv.Atoi(field[2:])
 		if err != nil || step <= 0 {
-			return nil, fmt.Errorf("invalid step: %s", field)
+			return 0, fmt.Errorf("invalid step: %s", field)
 		}
 		return expandRange(min, max, step), nil
 	}
@@ -174,15 +126,15 @@ func parseField(field string, min, max int, aliases map[string]int) ([]int, erro
 	// 处理逗号分隔列表
 	if strings.Contains(field, ",") {
 		parts := strings.Split(field, ",")
-		var result []int
+		var result uint64
 		for _, p := range parts {
 			vals, err := parseSingle(p, min, max, aliases)
 			if err != nil {
-				return nil, err
+				return 0, err
 			}
-			result = append(result, vals...)
+			result |= vals
 		}
-		return uniqueSort(result), nil
+		return result, nil
 	}
 
 	// 单个表达式（数字、范围、带步进的范围）
@@ -190,7 +142,7 @@ func parseField(field string, min, max int, aliases map[string]int) ([]int, erro
 }
 
 // parseSingle 解析单个表达式（不带逗号）
-func parseSingle(expr string, min, max int, aliases map[string]int) ([]int, error) {
+func parseSingle(expr string, min, max int, aliases map[string]int) (uint64, error) {
 	// 处理范围步进：1-10/2
 	if strings.Contains(expr, "/") {
 		return parseSingleWithStep(expr, min, max, aliases)
@@ -204,19 +156,19 @@ func parseSingle(expr string, min, max int, aliases map[string]int) ([]int, erro
 	// 单个数字或别名
 	val, err := parseValue(expr, min, max, aliases)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return []int{val}, nil
+	return 1 << val, nil
 }
 
-func parseSingleWithStep(expr string, min, max int, aliases map[string]int) ([]int, error) {
+func parseSingleWithStep(expr string, min, max int, aliases map[string]int) (uint64, error) {
 	parts := strings.Split(expr, "/")
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid step expression: %s", expr)
+		return 0, fmt.Errorf("invalid step expression: %s", expr)
 	}
 	step, err := strconv.Atoi(parts[1])
 	if err != nil || step <= 0 {
-		return nil, fmt.Errorf("invalid step number: %s", parts[1])
+		return 0, fmt.Errorf("invalid step number: %s", parts[1])
 	}
 
 	rangePart := parts[0]
@@ -226,44 +178,44 @@ func parseSingleWithStep(expr string, min, max int, aliases map[string]int) ([]i
 	} else if strings.Contains(rangePart, "-") {
 		rangeVals := strings.Split(rangePart, "-")
 		if len(rangeVals) != 2 {
-			return nil, fmt.Errorf("invalid range: %s", rangePart)
+			return 0, fmt.Errorf("invalid range: %s", rangePart)
 		}
 		start, err = parseValue(rangeVals[0], min, max, aliases)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		end, err = parseValue(rangeVals[1], min, max, aliases)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 	} else {
 		start, err = parseValue(rangePart, min, max, aliases)
 		if err != nil {
-			return nil, err
+			return 0, err
 		}
 		end = max
 	}
 	if start > end {
-		return nil, fmt.Errorf("range start > end: %s", rangePart)
+		return 0, fmt.Errorf("range start > end: %s", rangePart)
 	}
 	return expandRange(start, end, step), nil
 }
 
-func parseSingleWithRange(expr string, min, max int, aliases map[string]int) ([]int, error) {
+func parseSingleWithRange(expr string, min, max int, aliases map[string]int) (uint64, error) {
 	parts := strings.Split(expr, "-")
 	if len(parts) != 2 {
-		return nil, fmt.Errorf("invalid range: %s", expr)
+		return 0, fmt.Errorf("invalid range: %s", expr)
 	}
 	start, err := parseValue(parts[0], min, max, aliases)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	end, err := parseValue(parts[1], min, max, aliases)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 	if start > end {
-		return nil, fmt.Errorf("range start > end: %s", expr)
+		return 0, fmt.Errorf("range start > end: %s", expr)
 	}
 	return expandRange(start, end, 1), nil
 }
@@ -291,27 +243,21 @@ func parseValue(s string, min, max int, aliases map[string]int) (int, error) {
 }
 
 // expandRange 生成 [start, end] 步长为 step 的整数切片
-func expandRange(start, end, step int) []int {
-	var res []int
+func expandRange(start, end, step int) uint64 {
+	var res uint64
 	for i := start; i <= end; i += step {
-		res = append(res, i)
+		res |= 1 << i
 	}
 	return res
 }
 
 // normalizeSunday 将星期日统一表示为 0（去除 7）
-func normalizeSunday(vals []int) []int {
+func normalizeSunday(vals uint64) uint64 {
 	// 用 0 替换 7
-	for i, v := range vals {
-		if v == 7 {
-			vals[i] = 0
-		}
+	v := uint64(1) << 7
+	if vals&v != 0 {
+		vals ^= v
+		vals |= 1
 	}
-	return uniqueSort(vals)
-}
-
-// uniqueSort 去重并排序
-func uniqueSort(nums []int) []int {
-	ldsort.SortIntegers(nums)
-	return ldsort.UniqIntegers(nums)
+	return vals
 }

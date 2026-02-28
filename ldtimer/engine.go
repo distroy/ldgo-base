@@ -48,6 +48,23 @@ func (e Engine[A]) RegService(c context.Context, service any, tasks map[string]s
 	}
 }
 
+// RegHandler registers timer task handlers
+// Parameters:
+//   - name: task name
+//   - handler: task mapping where key is task name and value is method name in service
+//
+// RegHandler 注册定时任务处理器
+// 参数说明：
+//   - name: 任务名称
+//   - handler: 任务映射表，key为任务名称，value为服务中的方法名
+func (e Engine[A]) RegHandler(c context.Context, name string, handler any) {
+	h := newHandler(handler)
+	h.Init()
+	e.adaptor.Register(c, name, h.Do)
+	ldctx.LogI(c, "[ldtimer] register handler succ", ldlog.String("adaptor", e.adaptor.Name()),
+		ldlog.String("task", name), ldlog.String("func", h.Name))
+}
+
 func (e Engine[A]) newHandler(service any, method string) *handler {
 	v := reflect.ValueOf(service)
 	m := v.MethodByName(method)

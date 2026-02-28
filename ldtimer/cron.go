@@ -29,10 +29,10 @@ func (c cronAdaptor) SetProgress(ctx context.Context, task *Task, progress strin
 }
 
 func (c cronAdaptor) Register(ctx context.Context, taskName string, taskFunc func(*Task) error) {
-	c.Cron.register(ctx, taskName, taskFunc)
+	c.Cron.adaptorRegister(ctx, taskName, taskFunc)
 }
 
-func (c cronAdaptor) Run(ctx context.Context) { c.Cron.run(ctx) }
+func (c cronAdaptor) Run(ctx context.Context) { c.Cron.adaptorRun(ctx) }
 
 type Cron struct {
 	engine Engine[cronAdaptor]
@@ -40,7 +40,7 @@ type Cron struct {
 	funcs  map[string]func(*Task) error
 }
 
-func (c *Cron) register(ctx context.Context, taskName string, taskFunc func(*Task) error) {
+func (c *Cron) adaptorRegister(ctx context.Context, taskName string, taskFunc func(*Task) error) {
 	if c.funcs == nil {
 		c.funcs = make(map[string]func(*Task) error)
 	}
@@ -51,7 +51,7 @@ func (c *Cron) Run(ctx context.Context) {
 	c.engine.Run(ctx)
 }
 
-func (c *Cron) run(ctx context.Context) {
+func (c *Cron) adaptorRun(ctx context.Context) {
 	if c.tasks == nil {
 		c.tasks = make(map[string]*cronTask)
 	}

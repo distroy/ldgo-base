@@ -86,7 +86,7 @@ func (h *handler) getAllInConvs(funcType reflect.Type) []inConvType {
 	if inCount >= 1 {
 		ctxType := funcType.In(0 + offset)
 		if ctxType != typeOfContext && !h.isType(typeOfContext, ctxType) {
-			panic(fmt.Sprintf("[ldtimer] %s input parameter type should be `*ginutil.Context` or `*gin.Context`", h.Name))
+			panic(fmt.Sprintf("[ldtimer] %s input parameter type should be `context.Context`", h.Name))
 		}
 	}
 

@@ -9,6 +9,20 @@ import (
 	"testing"
 )
 
+func testIntsToUint64[T []int | uint64](d T) uint64 {
+	if n, ok := any(d).(uint64); ok {
+		return n
+	}
+
+	s, _ := any(d).([]int)
+	r := uint64(0)
+	for _, v := range s {
+		b := uint64(1) << v
+		r |= b
+	}
+	return r
+}
+
 // 测试完整的 Parse 函数
 func TestParseCronExpr(t *testing.T) {
 	tests := []struct {
@@ -21,11 +35,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "standard five fields with command (ignored)",
 			expr: "*/15 0 1,15 * 1-5 /usr/bin/backup",
 			want: &CronSpec{
-				Minute:     []int{0, 15, 30, 45},
-				Hour:       []int{0},
-				DayOfMonth: []int{1, 15},
-				Month:      expandRange(1, 12, 1),
-				DayOfWeek:  []int{1, 2, 3, 4, 5},
+				Minute:     testIntsToUint64([]int{0, 15, 30, 45}),
+				Hour:       testIntsToUint64([]int{0}),
+				DayOfMonth: testIntsToUint64([]int{1, 15}),
+				Month:      testIntsToUint64(expandRange(1, 12, 1)),
+				DayOfWeek:  testIntsToUint64([]int{1, 2, 3, 4, 5}),
 			},
 			wantErr: false,
 		},
@@ -33,11 +47,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "every minute",
 			expr: "* * * * *",
 			want: &CronSpec{
-				Minute:     expandRange(0, 59, 1),
-				Hour:       expandRange(0, 23, 1),
-				DayOfMonth: expandRange(1, 31, 1),
-				Month:      expandRange(1, 12, 1),
-				DayOfWeek:  expandRange(0, 6, 1),
+				Minute:     testIntsToUint64(expandRange(0, 59, 1)),
+				Hour:       testIntsToUint64(expandRange(0, 23, 1)),
+				DayOfMonth: testIntsToUint64(expandRange(1, 31, 1)),
+				Month:      testIntsToUint64(expandRange(1, 12, 1)),
+				DayOfWeek:  testIntsToUint64(expandRange(0, 6, 1)),
 			},
 			wantErr: false,
 		},
@@ -45,11 +59,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "every 5 minutes",
 			expr: "*/5 * * * *",
 			want: &CronSpec{
-				Minute:     []int{0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55},
-				Hour:       expandRange(0, 23, 1),
-				DayOfMonth: expandRange(1, 31, 1),
-				Month:      expandRange(1, 12, 1),
-				DayOfWeek:  expandRange(0, 6, 1),
+				Minute:     testIntsToUint64([]int{0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55}),
+				Hour:       testIntsToUint64(expandRange(0, 23, 1)),
+				DayOfMonth: testIntsToUint64(expandRange(1, 31, 1)),
+				Month:      testIntsToUint64(expandRange(1, 12, 1)),
+				DayOfWeek:  testIntsToUint64(expandRange(0, 6, 1)),
 			},
 			wantErr: false,
 		},
@@ -57,11 +71,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "range and list",
 			expr: "0-10/2 9-17 1,15 * 1-5",
 			want: &CronSpec{
-				Minute:     []int{0, 2, 4, 6, 8, 10},
-				Hour:       []int{9, 10, 11, 12, 13, 14, 15, 16, 17},
-				DayOfMonth: []int{1, 15},
-				Month:      expandRange(1, 12, 1),
-				DayOfWeek:  []int{1, 2, 3, 4, 5},
+				Minute:     testIntsToUint64([]int{0, 2, 4, 6, 8, 10}),
+				Hour:       testIntsToUint64([]int{9, 10, 11, 12, 13, 14, 15, 16, 17}),
+				DayOfMonth: testIntsToUint64([]int{1, 15}),
+				Month:      testIntsToUint64(expandRange(1, 12, 1)),
+				DayOfWeek:  testIntsToUint64([]int{1, 2, 3, 4, 5}),
 			},
 			wantErr: false,
 		},
@@ -69,11 +83,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "month names",
 			expr: "0 12 1 jan,dec 0",
 			want: &CronSpec{
-				Minute:     []int{0},
-				Hour:       []int{12},
-				DayOfMonth: []int{1},
-				Month:      []int{1, 12},
-				DayOfWeek:  []int{0},
+				Minute:     testIntsToUint64([]int{0}),
+				Hour:       testIntsToUint64([]int{12}),
+				DayOfMonth: testIntsToUint64([]int{1}),
+				Month:      testIntsToUint64([]int{1, 12}),
+				DayOfWeek:  testIntsToUint64([]int{0}),
 			},
 			wantErr: false,
 		},
@@ -81,11 +95,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "weekday names",
 			expr: "30 14 * * mon,fri",
 			want: &CronSpec{
-				Minute:     []int{30},
-				Hour:       []int{14},
-				DayOfMonth: expandRange(1, 31, 1),
-				Month:      expandRange(1, 12, 1),
-				DayOfWeek:  []int{1, 5},
+				Minute:     testIntsToUint64([]int{30}),
+				Hour:       testIntsToUint64([]int{14}),
+				DayOfMonth: testIntsToUint64(expandRange(1, 31, 1)),
+				Month:      testIntsToUint64(expandRange(1, 12, 1)),
+				DayOfWeek:  testIntsToUint64([]int{1, 5}),
 			},
 			wantErr: false,
 		},
@@ -93,11 +107,11 @@ func TestParseCronExpr(t *testing.T) {
 			name: "sunday both 0 and 7",
 			expr: "0 0 * * 0,7",
 			want: &CronSpec{
-				Minute:     []int{0},
-				Hour:       []int{0},
-				DayOfMonth: expandRange(1, 31, 1),
-				Month:      expandRange(1, 12, 1),
-				DayOfWeek:  []int{0}, // 7 被统一为 0
+				Minute:     testIntsToUint64([]int{0}),
+				Hour:       testIntsToUint64([]int{0}),
+				DayOfMonth: testIntsToUint64(expandRange(1, 31, 1)),
+				Month:      testIntsToUint64(expandRange(1, 12, 1)),
+				DayOfWeek:  testIntsToUint64([]int{0}), // 7 被统一为 0
 			},
 			wantErr: false,
 		},
@@ -158,22 +172,22 @@ func Test_parseField(t *testing.T) {
 		min     int
 		max     int
 		aliases map[string]int
-		want    []int
+		want    uint64
 		wantErr bool
 	}{
-		{"star", "*", 1, 3, nil, []int{1, 2, 3}, false},
-		{"step", "*/2", 0, 5, nil, []int{0, 2, 4}, false},
-		{"list", "1,3,5", 0, 6, nil, []int{1, 3, 5}, false},
-		{"range", "2-4", 0, 6, nil, []int{2, 3, 4}, false},
-		{"range with step", "1-5/2", 0, 6, nil, []int{1, 3, 5}, false},
-		{"star with step", "*/3", 1, 7, nil, []int{1, 4, 7}, false},
-		{"alias single", "jan", 1, 12, aliases, []int{1}, false},
-		{"alias in list", "jan,feb", 1, 12, aliases, []int{1, 2}, false},
-		{"invalid step", "*/a", 0, 5, nil, nil, true},
-		{"step zero", "*/0", 0, 5, nil, nil, true},
-		{"invalid range", "1-a", 0, 5, nil, nil, true},
-		{"out of range", "6", 0, 5, nil, nil, true},
-		{"unknown alias", "mar", 1, 12, aliases, nil, true},
+		{"star", "*", 1, 3, nil, testIntsToUint64([]int{1, 2, 3}), false},
+		{"step", "*/2", 0, 5, nil, testIntsToUint64([]int{0, 2, 4}), false},
+		{"list", "1,3,5", 0, 6, nil, testIntsToUint64([]int{1, 3, 5}), false},
+		{"range", "2-4", 0, 6, nil, testIntsToUint64([]int{2, 3, 4}), false},
+		{"range with step", "1-5/2", 0, 6, nil, testIntsToUint64([]int{1, 3, 5}), false},
+		{"star with step", "*/3", 1, 7, nil, testIntsToUint64([]int{1, 4, 7}), false},
+		{"alias single", "jan", 1, 12, aliases, testIntsToUint64([]int{1}), false},
+		{"alias in list", "jan,feb", 1, 12, aliases, testIntsToUint64([]int{1, 2}), false},
+		{"invalid step", "*/a", 0, 5, nil, 0, true},
+		{"step zero", "*/0", 0, 5, nil, 0, true},
+		{"invalid range", "1-a", 0, 5, nil, 0, true},
+		{"out of range", "6", 0, 5, nil, 0, true},
+		{"unknown alias", "mar", 1, 12, aliases, 0, true},
 	}
 
 	for _, tt := range tests {
@@ -199,16 +213,16 @@ func Test_parseSingle(t *testing.T) {
 		min     int
 		max     int
 		aliases map[string]int
-		want    []int
+		want    uint64
 		wantErr bool
 	}{
-		{"single number", "5", 0, 9, nil, []int{5}, false},
-		{"alias", "sun", 0, 6, aliases, []int{0}, false},
-		{"range", "1-3", 0, 5, nil, []int{1, 2, 3}, false},
-		{"range with step", "0-6/2", 0, 6, nil, []int{0, 2, 4, 6}, false},
-		{"star with step", "*/4", 0, 8, nil, []int{0, 4, 8}, false},
-		{"invalid range", "5-1", 0, 9, nil, nil, true},
-		{"invalid number", "x", 0, 9, nil, nil, true},
+		{"single number", "5", 0, 9, nil, testIntsToUint64([]int{5}), false},
+		{"alias", "sun", 0, 6, aliases, testIntsToUint64([]int{0}), false},
+		{"range", "1-3", 0, 5, nil, testIntsToUint64([]int{1, 2, 3}), false},
+		{"range with step", "0-6/2", 0, 6, nil, testIntsToUint64([]int{0, 2, 4, 6}), false},
+		{"star with step", "*/4", 0, 8, nil, testIntsToUint64([]int{0, 4, 8}), false},
+		{"invalid range", "5-1", 0, 9, nil, 0, true},
+		{"invalid number", "x", 0, 9, nil, 0, true},
 	}
 
 	for _, tt := range tests {
@@ -262,15 +276,13 @@ func Test_parseValue(t *testing.T) {
 func Test_expandRange(t *testing.T) {
 	tests := []struct {
 		start, end, step int
-		want             []int
+		want             uint64
 	}{
-		{1, 5, 1, []int{1, 2, 3, 4, 5}},
-		{0, 6, 2, []int{0, 2, 4, 6}},
-		{5, 5, 1, []int{5}},
-		{1, 3, 3, []int{1, 4}}, // 注意：1+3=4 > 3，实际只输出1（实现是i+=step，i<=end，所以会输出1和4? 需要验证原代码：for i:=start; i<=end; i+=step，所以当start=1, end=3, step=3时，i=1 (<=3), i=4 (<=3? 4>3, stop) 所以输出[1]。所以期望是[1]）
+		{1, 5, 1, testIntsToUint64([]int{1, 2, 3, 4, 5})},
+		{0, 6, 2, testIntsToUint64([]int{0, 2, 4, 6})},
+		{5, 5, 1, testIntsToUint64([]int{5})},
+		{1, 3, 3, testIntsToUint64([]int{1})},
 	}
-	// 修正用例
-	tests[3].want = []int{1}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			got := expandRange(tt.start, tt.end, tt.step)
@@ -284,15 +296,15 @@ func Test_expandRange(t *testing.T) {
 // 测试 normalizeSunday
 func Test_normalizeSunday(t *testing.T) {
 	tests := []struct {
-		input []int
-		want  []int
+		input uint64
+		want  uint64
 	}{
-		{[]int{0}, []int{0}},
-		{[]int{7}, []int{0}},
-		{[]int{0, 7}, []int{0}},
-		{[]int{1, 7, 2}, []int{0, 1, 2}},
-		{[]int{0, 1, 7, 2}, []int{0, 1, 2}},
-		{[]int{}, []int{}},
+		{testIntsToUint64([]int{0}), testIntsToUint64([]int{0})},
+		{testIntsToUint64([]int{7}), testIntsToUint64([]int{0})},
+		{testIntsToUint64([]int{0, 7}), testIntsToUint64([]int{0})},
+		{testIntsToUint64([]int{1, 7, 2}), testIntsToUint64([]int{0, 1, 2})},
+		{testIntsToUint64([]int{0, 1, 7, 2}), testIntsToUint64([]int{0, 1, 2})},
+		{testIntsToUint64([]int{}), testIntsToUint64([]int{})},
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
@@ -304,35 +316,14 @@ func Test_normalizeSunday(t *testing.T) {
 	}
 }
 
-// 测试 uniqueSort
-func Test_uniqueSort(t *testing.T) {
-	tests := []struct {
-		input []int
-		want  []int
-	}{
-		{[]int{3, 1, 2, 1, 3}, []int{1, 2, 3}},
-		{[]int{}, []int{}},
-		{[]int{5}, []int{5}},
-		{[]int{2, 2, 2}, []int{2}},
-	}
-	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			got := uniqueSort(tt.input)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("uniqueSort(%v) = %v, want %v", tt.input, got, tt.want)
-			}
-		})
-	}
-}
-
 // 测试 Matches 方法
-func TestCronSpec_Matches(t *testing.T) {
+func TestCronSpec_match(t *testing.T) {
 	spec := &CronSpec{
-		Minute:     []int{0, 30},
-		Hour:       []int{9, 17},
-		DayOfMonth: []int{1, 15},
-		Month:      []int{1, 6, 12},
-		DayOfWeek:  []int{1, 3, 5}, // 周一、三、五
+		Minute:     testIntsToUint64([]int{0, 30}),
+		Hour:       testIntsToUint64([]int{9, 17}),
+		DayOfMonth: testIntsToUint64([]int{1, 15}),
+		Month:      testIntsToUint64([]int{1, 6, 12}),
+		DayOfWeek:  testIntsToUint64([]int{1, 3, 5}), // 周一、三、五
 	}
 	tests := []struct {
 		minute, hour, day, month, weekday int
@@ -347,9 +338,9 @@ func TestCronSpec_Matches(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			got := spec.Matches(tt.minute, tt.hour, tt.day, tt.month, tt.weekday)
+			got := spec.match(tt.minute, tt.hour, tt.day, tt.month, tt.weekday)
 			if got != tt.want {
-				t.Errorf("Matches(%d,%d,%d,%d,%d) = %v, want %v", tt.minute, tt.hour, tt.day, tt.month, tt.weekday, got, tt.want)
+				t.Errorf("match(%d,%d,%d,%d,%d) = %v, want %v", tt.minute, tt.hour, tt.day, tt.month, tt.weekday, got, tt.want)
 			}
 		})
 	}
