@@ -18,12 +18,11 @@ const (
 )
 
 func newContext(task *Task) context.Context {
-	seq := task.Info.GetSequence()
-	if seq == "" {
-		seq = ctx_.NewSequence()
-	}
 	ctx := ldctx.Default()
-	ctx = ldctx.WithSequence(ctx, seq)
+	ctx = task.Info.WithSequence(ctx)
+	if ldctx.GetSequence(ctx) == "" {
+		ctx = ldctx.WithSequence(ctx, ctx_.NewSequence())
+	}
 	ctx = ldctx.WithValue(ctx, ctxKeyTask, task)
 
 	return ctx

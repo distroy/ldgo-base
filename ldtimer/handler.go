@@ -27,7 +27,35 @@ var (
 	typeOfString  = reflect.TypeFor[string]()
 )
 
-type handler struct {
+func NewHandler(f any) *Handler {
+	handlerName := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	h := &Handler{
+		Service: nil,
+		Func:    f,
+		Name:    handlerName,
+		Value:   reflect.ValueOf(f),
+	}
+	h.init()
+	return h
+}
+
+func NewHandlerByMethod(service any, method string) *Handler {
+	v := reflect.ValueOf(service)
+	m := v.MethodByName(method)
+	if !m.IsValid() {
+		panic(fmt.Errorf("cannot find the method `%s` from type `%s`", method, v.Type().String()))
+	}
+	h := &Handler{
+		Service: nil,
+		Func:    m.Interface(),
+		Name:    method,
+		Value:   m,
+	}
+	h.init()
+	return h
+}
+
+type Handler struct {
 	Service any
 	Func    any
 	Name    string
@@ -38,20 +66,7 @@ type handler struct {
 	OutConv outConvType
 }
 
-func newHandler(f any) *handler {
-	handlerName := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-
-	h := &handler{
-		Service: nil,
-		Func:    f,
-		Name:    handlerName,
-		Value:   reflect.ValueOf(f),
-	}
-
-	return h
-}
-
-func (h *handler) Init() {
+func (h *Handler) init() {
 	// h.Value = reflect.ValueOf(h.Func)
 	h.Type = h.Value.Type()
 
@@ -59,7 +74,7 @@ func (h *handler) Init() {
 	h.OutConv = h.getOutConv(h.Type)
 }
 
-func (h *handler) getAllInConvs(funcType reflect.Type) []inConvType {
+func (h *Handler) getAllInConvs(funcType reflect.Type) []inConvType {
 	offset := 0
 	if h.Service != nil {
 		receiver := reflect.TypeOf(h.Service)
@@ -103,7 +118,7 @@ func (h *handler) getAllInConvs(funcType reflect.Type) []inConvType {
 	return inConvs
 }
 
-func (h *handler) getOneInConv(t reflect.Type) inConvType {
+func (h *Handler) getOneInConv(t reflect.Type) inConvType {
 	if h.Service != nil && reflect.TypeOf(h.Service) == t {
 		return func(ctx context.Context, task *Task) (reflect.Value, error) {
 			return reflect.ValueOf(h.Service), nil
@@ -143,7 +158,7 @@ func (h *handler) getOneInConv(t reflect.Type) inConvType {
 	}
 }
 
-func (h *handler) getOutConv(funcType reflect.Type) outConvType {
+func (h *Handler) getOutConv(funcType reflect.Type) outConvType {
 	switch funcType.NumOut() {
 	case 0:
 		return func(ctx context.Context, v []reflect.Value) error {
@@ -177,7 +192,7 @@ func (h *handler) getOutConv(funcType reflect.Type) outConvType {
 	}
 }
 
-func (h *handler) isType(child, parent reflect.Type) bool {
+func (h *Handler) isType(child, parent reflect.Type) bool {
 	if child == parent {
 		return true
 	}
@@ -187,7 +202,7 @@ func (h *handler) isType(child, parent reflect.Type) bool {
 	return false
 }
 
-func (h *handler) Do(task *Task) (_err error) {
+func (h *Handler) Do(task *Task) (_err error) {
 	c := newContext(task)
 	ldctx.LogI(c, "[ldtimer] do timer handler begin", ldlog.String("adaptor", task.Adaptor.Name()),
 		ldlog.String("name", h.Name), ldlog.Reflect("task", task))

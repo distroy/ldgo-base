@@ -8,7 +8,7 @@ import "context"
 
 type TaskInfo interface {
 	GetParams() string
-	GetSequence() string
+	WithSequence(c context.Context) context.Context
 }
 
 type Task struct {

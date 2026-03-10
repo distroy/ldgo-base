@@ -28,22 +28,23 @@ func (s *CronSpec) match(minute, hour, day, month, weekday int) bool {
 		(s.Month >> month) & (s.DayOfWeek >> weekday))
 }
 
-// Next 计算下一次运行时间
-func (s *CronSpec) Next(from time.Time) time.Time {
-	next := ldtime.MinuteBegin(from)
-	for range 100000 { // 防止无限循环
-		next = next.Add(1 * time.Minute)
-		if s.Match(next) {
-			return next
-		}
-	}
-
-	return time.Time{}
-}
-
 // Match 检查给定时间是否匹配计划
 func (s *CronSpec) Match(t time.Time) bool {
 	return s.match(t.Minute(), t.Hour(), t.Day(), int(t.Month()), int(t.Weekday()))
+}
+
+// Next 计算下一次运行时间
+func (s *CronSpec) Next(from time.Time) (time.Time, bool) {
+	const max_min = 60 * 24 * 30 * 3 // 防止无限循环
+	next := ldtime.MinuteBegin(from)
+	for range max_min {
+		next = next.Add(1 * time.Minute)
+		if s.Match(next) {
+			return next, true
+		}
+	}
+
+	return next, false
 }
 
 // String 返回可读的 cron 表达式
