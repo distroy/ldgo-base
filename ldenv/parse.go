@@ -61,20 +61,23 @@ func parseEnvField(fv reflect.Value, sf reflect.StructField) {
 	switch fv.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		fv.SetInt(ldconv.AsInt64(val))
-		// v, _ := strconv.ParseInt(val, 10, 64)
-		// fv.SetInt(v)
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
 		fv.SetUint(ldconv.AsUint64(val))
-		// v, _ := strconv.ParseUint(val, 10, 64)
-		// fv.SetUint(v)
 
 	case reflect.String:
+		switch {
+		case tags.Has("lower"):
+			val = strings.ToLower(val)
+		case tags.Has("upper"):
+			val = strings.ToUpper(val)
+		}
 		fv.SetString(val)
+
+	case reflect.Bool:
+		fv.SetBool(ldconv.AsBool(val))
 
 	case reflect.Float32, reflect.Float64:
 		fv.SetFloat(ldconv.AsFloat64(val))
-		// v, _ := strconv.ParseFloat(val, 64)
-		// fv.SetFloat(v)
 	}
 }
