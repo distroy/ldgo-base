@@ -41,7 +41,7 @@ func (h Handler) Sequence() string  { return h.opts.SeqId }
 func (h Handler) Level() slog.Level { return h.opts.Level.Level() }
 
 func (h Handler) Enabled(c context.Context, lvl slog.Level) bool  { return h.enabled(lvl) }
-func (h Handler) Handle(c context.Context, rec slog.Record) error { return h.handle(c, GetRecord(rec)) }
+func (h Handler) Handle(c context.Context, rec slog.Record) error { return h.handle(c, h.getRec(&rec)) }
 func (h Handler) WithAttrs(as []slog.Attr) slog.Handler           { return Handler{h.withAttrs(GetAttrs(as))} }
 func (h Handler) WithGroup(name string) slog.Handler              { return Handler{h.withGroup(name)} }
 
@@ -77,7 +77,9 @@ func (h *commonHandler) clone() *commonHandler {
 	}
 }
 
-func (h *commonHandler) handle(_ context.Context, r Record) error {
+func (h *commonHandler) getRec(r *slog.Record) *Record { return GetRecordPtr(r) }
+
+func (h *commonHandler) handle(_ context.Context, r *Record) error {
 	seqId := h.opts.SeqId
 	if seqId == "" {
 		seqId = "-"

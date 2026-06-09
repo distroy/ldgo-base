@@ -227,7 +227,7 @@ func (s *handleState) appendValue(v Value) {
 	}
 }
 
-func (s *handleState) appendNonBuiltIns(r Record) {
+func (s *handleState) appendNonBuiltIns(r *Record) {
 	// Attrs in Record -- unlike the built-in ones, they are in groups started
 	// from WithGroup.
 	// If the record has no Attrs, don't output any groups.

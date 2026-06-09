@@ -5,15 +5,20 @@
 package slogtype__
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"reflect"
 	"strconv"
 	"time"
+	"unsafe"
+
+	"github.com/distroy/ldgo-base/ldlog/internal/buf__"
 )
 
 func init() {
-	checkTypeEqual(reflect.TypeOf(Value{}), reflect.TypeOf(slog.Value{}))
+	checkTypeEqual(reflect.TypeFor[Value](), reflect.TypeFor[slog.Value]())
 }
 
 func GetValuePtr(v *slog.Value) *Value { return toType[*Value](v) }
@@ -114,4 +119,60 @@ func (v *Value) Append(dst []byte) []byte {
 	default:
 		panic(fmt.Sprintf("bad kind: %s", v.Kind()))
 	}
+}
+
+func (v *Value) WriteToBuffer(buf *buf__.Buffer) {
+	err := v.writeToBuffer(buf)
+	if err != nil {
+		buf.AppendString(fmt.Sprintf("!ERROR:%v", err))
+	}
+}
+
+func (v *Value) writeToBuffer(buf *buf__.Buffer) error {
+	switch v.Kind() {
+	case KindString:
+		buf.AppendQuote(v.String())
+	case KindInt64:
+		buf.AppendInt(v.Int64())
+		// *s.buf = strconv.AppendInt(*s.buf, v.Int64(), 10)
+	case KindUint64:
+		buf.AppendUint(v.Uint64())
+		// *s.buf = strconv.AppendUint(*s.buf, v.Uint64(), 10)
+	case KindFloat64:
+		// json.Marshal is funny about floats; it doesn't
+		// always match strconv.AppendFloat. So just call it.
+		// That's expensive, but floats are rare.
+		buf.AppendFloat(v.Float64(), 64)
+	case KindBool:
+		buf.AppendBool(v.Bool())
+	case KindDuration:
+		// Do what json.Marshal does.
+		buf.AppendDuration(v.Duration())
+	case KindTime:
+		buf.AppendTime(v.Time(), "")
+		// s.appendTime(v.Time())
+	case KindAny:
+		vv := v.Any()
+		switch m := vv.(type) {
+		case io.WriterTo:
+			_, err := m.WriteTo(buf)
+			return err
+
+		case json.Marshaler:
+			return buf.AppendJson(vv)
+
+		case error:
+			buf.AppendQuote(m.Error())
+
+		case unsafe.Pointer:
+			buf.AppendString("0x")
+			*buf = strconv.AppendUint(*buf, uint64(uintptr(m)), 0x10)
+
+		default:
+			return buf.AppendJson(vv)
+		}
+	default:
+		panic(fmt.Sprintf("bad kind: %s", v.Kind()))
+	}
+	return nil
 }

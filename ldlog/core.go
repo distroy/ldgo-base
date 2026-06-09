@@ -6,10 +6,15 @@ package ldlog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"runtime"
+	"strings"
 	"time"
+
+	"github.com/distroy/ldgo-base/ldlog/internal/buf__"
+	"github.com/distroy/ldgo-base/ldlog/internal/slogtype__"
 )
 
 const (
@@ -70,7 +75,32 @@ func (l *core) writeRecord(c context.Context, lvl Level, r *Record) {
 	}
 	l.Sync()
 	// panic(rec2err(r))
-	panic(r.Message)
+	panic(errors.New(l.buildRecordStr(r)))
+}
+
+func (l *core) buildRecordStr(r *Record) string {
+	if r.NumAttrs() == 0 {
+		return r.Message
+	}
+	buf := buf__.NewBuffer()
+	defer buf.Free()
+
+	buf.AppendString(strings.TrimSuffix(r.Message, "."))
+	buf.AppendString(". ")
+
+	r.Attrs(func(a slog.Attr) bool {
+		buf.AppendString(a.Key)
+		buf.AppendString(":")
+
+		v := slogtype__.GetValuePtr(&a.Value).Resolve()
+		v.WriteToBuffer(buf)
+
+		buf.WriteString(", ")
+		return true
+	})
+
+	buf.TrimNewline()
+	return strings.TrimSuffix(buf.String(), ", ")
 }
 
 func (l *core) log(c context.Context, lvl Level, skip int, msg string, args ...any) {
