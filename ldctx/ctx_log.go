@@ -7,7 +7,6 @@ package ldctx
 import (
 	"context"
 	"fmt"
-	_ "unsafe"
 
 	"github.com/distroy/ldgo-base/ldlog"
 )
@@ -35,19 +34,13 @@ type stringer interface {
 	String() string
 }
 
-//go:linkname logFmt github.com/distroy/ldgo-base/ldlog.logFmt
-func logFmt(l *ldlog.Logger, lvl ldlog.Level, skip int, fmt string, args ...any)
-
-//go:linkname logAttrs github.com/distroy/ldgo-base/ldlog.logAttrs
-func logAttrs(l *ldlog.Logger, lvl ldlog.Level, skip int, msg string, args ...ldlog.Attr)
-
 func ctxLogFmt(c Context, lvl ldlog.Level, fmt string, args ...any) {
 	format(fmt, args...)
-	logFmt(GetLogger(c), lvl, 2, fmt, args...)
+	GetLogger(c).LogFmt(lvl, 2, fmt, args...)
 }
 
 func ctxLogAttr(c Context, lvl ldlog.Level, msg string, args ...ldlog.Attr) {
-	logAttrs(GetLogger(c), lvl, 2, msg, args...)
+	GetLogger(c).LogAttrs(lvl, 2, msg, args...)
 }
 
 const (

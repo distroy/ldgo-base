@@ -55,33 +55,26 @@ func (l *Logger) WithOptions(opts ...Option) *Logger {
 	return l
 }
 
-func (l *Logger) Trace(msg string, attrs ...Attr) { l.logAttrs(nil, lvlT, 1, msg, attrs...) }
-func (l *Logger) Debug(msg string, attrs ...Attr) { l.logAttrs(nil, lvlD, 1, msg, attrs...) }
-func (l *Logger) Info(msg string, attrs ...Attr)  { l.logAttrs(nil, lvlI, 1, msg, attrs...) }
-func (l *Logger) Warn(msg string, attrs ...Attr)  { l.logAttrs(nil, lvlW, 1, msg, attrs...) }
-func (l *Logger) Error(msg string, attrs ...Attr) { l.logAttrs(nil, lvlE, 1, msg, attrs...) }
-func (l *Logger) Panic(msg string, attrs ...Attr) { l.logAttrs(nil, lvlP, 1, msg, attrs...) }
+func (l *Logger) Trace(msg string, attrs ...Attr) { l.LogAttrs(lvlT, 1, msg, attrs...) }
+func (l *Logger) Debug(msg string, attrs ...Attr) { l.LogAttrs(lvlD, 1, msg, attrs...) }
+func (l *Logger) Info(msg string, attrs ...Attr)  { l.LogAttrs(lvlI, 1, msg, attrs...) }
+func (l *Logger) Warn(msg string, attrs ...Attr)  { l.LogAttrs(lvlW, 1, msg, attrs...) }
+func (l *Logger) Error(msg string, attrs ...Attr) { l.LogAttrs(lvlE, 1, msg, attrs...) }
+func (l *Logger) Panic(msg string, attrs ...Attr) { l.LogAttrs(lvlP, 1, msg, attrs...) }
 
-func (l *Logger) Tracef(fmt string, args ...any) { l.logFmt(nil, lvlT, 1, fmt, args...) }
-func (l *Logger) Debugf(fmt string, args ...any) { l.logFmt(nil, lvlD, 1, fmt, args...) }
-func (l *Logger) Infof(fmt string, args ...any)  { l.logFmt(nil, lvlI, 1, fmt, args...) }
-func (l *Logger) Warnf(fmt string, args ...any)  { l.logFmt(nil, lvlW, 1, fmt, args...) }
-func (l *Logger) Errorf(fmt string, args ...any) { l.logFmt(nil, lvlE, 1, fmt, args...) }
-func (l *Logger) Panicf(fmt string, args ...any) { l.logFmt(nil, lvlP, 1, fmt, args...) }
+func (l *Logger) Tracef(fmt string, args ...any) { l.LogFmt(lvlT, 1, fmt, args...) }
+func (l *Logger) Debugf(fmt string, args ...any) { l.LogFmt(lvlD, 1, fmt, args...) }
+func (l *Logger) Infof(fmt string, args ...any)  { l.LogFmt(lvlI, 1, fmt, args...) }
+func (l *Logger) Warnf(fmt string, args ...any)  { l.LogFmt(lvlW, 1, fmt, args...) }
+func (l *Logger) Errorf(fmt string, args ...any) { l.LogFmt(lvlE, 1, fmt, args...) }
+func (l *Logger) Panicf(fmt string, args ...any) { l.LogFmt(lvlP, 1, fmt, args...) }
 
-func (l *Logger) Traceln(args ...any) { l.logln(nil, lvlT, 1, args...) }
-func (l *Logger) Debugln(args ...any) { l.logln(nil, lvlD, 1, args...) }
-func (l *Logger) Infoln(args ...any)  { l.logln(nil, lvlI, 1, args...) }
-func (l *Logger) Warnln(args ...any)  { l.logln(nil, lvlW, 1, args...) }
-func (l *Logger) Errorln(args ...any) { l.logln(nil, lvlE, 1, args...) }
-func (l *Logger) Panicln(args ...any) { l.logln(nil, lvlP, 1, args...) }
-
-func (l *Logger) LogFmt(lvl Level, skip int, fmt string, args ...any) {
-	l.logFmt(nil, lvl, skip+1, fmt, args...)
-}
-func (l *Logger) LogAttrs(lvl Level, skip int, msg string, args ...Attr) {
-	l.logAttrs(nil, lvl, skip+1, msg, args...)
-}
+func (l *Logger) Traceln(args ...any) { l.Logln(lvlT, 1, args...) }
+func (l *Logger) Debugln(args ...any) { l.Logln(lvlD, 1, args...) }
+func (l *Logger) Infoln(args ...any)  { l.Logln(lvlI, 1, args...) }
+func (l *Logger) Warnln(args ...any)  { l.Logln(lvlW, 1, args...) }
+func (l *Logger) Errorln(args ...any) { l.Logln(lvlE, 1, args...) }
+func (l *Logger) Panicln(args ...any) { l.Logln(lvlP, 1, args...) }
 
 func logFmt(l *Logger, lvl Level, skip int, fmt string, args ...any) {
 	l.logFmt(nil, lvl, skip+1, fmt, args...)
