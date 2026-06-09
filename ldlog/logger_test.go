@@ -102,5 +102,18 @@ func TestLogger(t *testing.T) {
 			c.So(writer.String(), convey.ShouldEqual,
 				`2021-08-22T13:30:58.000+0800|TRACE|-|ldlog/logger_test.go:101|error message,abc=xxx|obj={"int":123,"str":"abc"}`+"\n")
 		})
+
+		c.Convey("panic", func(c convey.C) {
+			logfunc := func() {
+				m := map[string]any{
+					"ka": "vb",
+				}
+				l.Panic("panic message", String("str", "abc"), Reflect("map", m))
+			}
+			// c.So(logfunc, convey.ShouldPanicWith, errors.New(`panic message. str:"abc", map:{"ka":"vb"}`))
+			c.So(logfunc, convey.ShouldPanic)
+			c.So(writer.String(), convey.ShouldEqual,
+				`2021-08-22T13:30:58.000+0800|PANIC|-|ldlog/logger_test.go:111|panic message,abc=xxx|str=abc,map={"ka":"vb"}`+"\n")
+		})
 	})
 }

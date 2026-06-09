@@ -16,7 +16,7 @@ var (
 	defLogger = ldatomic.NewPtr(console)
 )
 
-func SetDefault(l *Logger) (old *Logger) { return defLogger.Swap(l) }
+func SetDefault(new *Logger) (old *Logger) { return defLogger.Swap(new) }
 func SetDefaultWithClose(l *Logger) {
 	old := SetDefault(l)
 	old.Close()

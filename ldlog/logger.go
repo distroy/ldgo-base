@@ -75,11 +75,3 @@ func (l *Logger) Infoln(args ...any)  { l.Logln(lvlI, 1, args...) }
 func (l *Logger) Warnln(args ...any)  { l.Logln(lvlW, 1, args...) }
 func (l *Logger) Errorln(args ...any) { l.Logln(lvlE, 1, args...) }
 func (l *Logger) Panicln(args ...any) { l.Logln(lvlP, 1, args...) }
-
-func logFmt(l *Logger, lvl Level, skip int, fmt string, args ...any) {
-	l.logFmt(nil, lvl, skip+1, fmt, args...)
-}
-
-func logAttrs(l *Logger, lvl Level, skip int, msg string, args ...Attr) {
-	l.logAttrs(nil, lvl, skip+1, msg, args...)
-}

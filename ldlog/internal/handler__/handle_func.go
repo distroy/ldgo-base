@@ -18,10 +18,6 @@ import (
 	"github.com/distroy/ldgo-base/ldconv"
 )
 
-type LogTextAppender interface {
-	AppendLogText(b []byte) ([]byte, error)
-}
-
 // func s2b(b string) []byte { return ldconv.StrToBytesUnsafe(b) }
 func b2s(b []byte) string   { return ldconv.BytesToStrUnsafe(b) }
 func quote(s string) string { return strconv.Quote(s) }
