@@ -118,3 +118,13 @@ func (l *core) logln(c context.Context, lvl Level, skip int, args ...any) {
 	// r.Add(args...)
 	l.writeRecord(c, lvl, &r)
 }
+
+func (l *core) LogFmt(lvl Level, skip int, fmt string, args ...any) {
+	l.logFmt(context.Background(), lvl, skip+1, fmt, args...)
+}
+func (l *core) LogAttrs(lvl Level, skip int, msg string, args ...Attr) {
+	l.logAttrs(context.Background(), lvl, skip+1, msg, args...)
+}
+func (l *core) Logln(lvl Level, skip int, args ...any) {
+	l.logln(context.Background(), lvl, skip+1, args...)
+}
