@@ -114,14 +114,3 @@ func Integer[Int ~int | ~int8 | ~int16 | ~int32 | ~int64 |
 }
 
 func Float[T ~float32 | ~float64](key string, val T) Attr { return Float64(key, float64(val)) }
-
-func BriefString(key string, val string) Attr         { return attr__.BriefString(key, val) }
-func BriefByteString(key string, val []byte) Attr     { return attr__.BriefByteString(key, val) }
-func BriefStringer(key string, val fmt.Stringer) Attr { return attr__.BriefStringer(key, val) }
-
-func BriefStringp(key string, val *string) Attr               { return attr__.BriefStringp(key, val) }
-func BriefStrings(key string, val []string) Attr              { return attr__.BriefStrings(key, val) }
-func BriefByteStrings(key string, val [][]byte) Attr          { return attr__.BriefByteStrings(key, val) }
-func BriefStringers[T fmt.Stringer](key string, val []T) Attr { return attr__.BriefStringers(key, val) }
-
-func BriefReflect(key string, val any) Attr { return attr__.BriefReflect(key, val) }
