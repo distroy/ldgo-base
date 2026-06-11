@@ -21,7 +21,7 @@ const (
 
 var (
 	briefStringLen = 100
-	briefArrayLen  = 1
+	briefArrayLen  = 3
 	briefMapLen    = 10
 )
 
