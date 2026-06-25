@@ -131,3 +131,94 @@ func TestDurationUnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestDurationUnmarshalYaml(t *testing.T) {
+	type args struct {
+		b []byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    time.Duration
+		wantErr bool
+	}{
+		{
+			name:    "string",
+			args:    args{b: []byte(`2h1m`)},
+			want:    time.Hour*2 + time.Minute*1,
+			wantErr: false,
+		},
+		{
+			name:    "int",
+			args:    args{b: []byte("12345")},
+			want:    time.Second * 12345,
+			wantErr: false,
+		},
+		{
+			name:    "int-0",
+			args:    args{b: []byte("0")},
+			want:    time.Second * 0,
+			wantErr: false,
+		},
+		{
+			name:    "hex-x",
+			args:    args{b: []byte("0x12345")},
+			want:    time.Second * 0x12345,
+			wantErr: false,
+		},
+		{
+			name:    "hex-X",
+			args:    args{b: []byte("0X12345")},
+			want:    time.Second * 0x12345,
+			wantErr: false,
+		},
+		{
+			name:    "oct-o",
+			args:    args{b: []byte("0o12345")},
+			want:    time.Second * 0o12345,
+			wantErr: false,
+		},
+		{
+			name:    "oct-O",
+			args:    args{b: []byte("0O12345")},
+			want:    time.Second * 0o12345,
+			wantErr: false,
+		},
+		{
+			name:    "oct",
+			args:    args{b: []byte("012345")},
+			want:    time.Second * 0o12345,
+			wantErr: false,
+		},
+		{
+			name:    "float",
+			args:    args{b: []byte("12345.123")},
+			want:    time.Second*12345 + time.Second*123/1000,
+			wantErr: false,
+		},
+		{
+			name:    "err-str",
+			args:    args{b: []byte("abc")},
+			want:    0,
+			wantErr: true,
+		},
+		{
+			name:    "err-int",
+			args:    args{b: []byte("12345f")},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := DurationUnmarshalYaml(tt.args.b)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DurationUnmarshalYaml() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DurationUnmarshalYaml() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

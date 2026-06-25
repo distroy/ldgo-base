@@ -9,10 +9,12 @@ import (
 	"math/big"
 	"strconv"
 	"time"
+
+	"github.com/distroy/ldgo-base/internal/time_"
 )
 
 const (
-	timeFormat = "2006-01-02T15:04:05-0700"
+	timeFormat = time_.TimeLayout
 )
 
 func ToByte(v any) (byte, error) { return ToUint8(v) }
