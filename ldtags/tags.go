@@ -39,12 +39,16 @@ func (m Tags) Values(key string) []string {
 	return m[key]
 }
 
-func (m Tags) Get(key string) string {
+func (m Tags) Get(key string, def ...string) string {
 	key = strings.ToLower(key)
 
 	v := m[key]
 	if len(v) != 0 {
 		return v[0]
+	}
+
+	if len(def) > 0 {
+		return def[0]
 	}
 
 	return ""

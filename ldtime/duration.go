@@ -51,11 +51,11 @@ func (d *Duration) UnmarshalYAML(n *yaml.Node) error {
 	// log.Printf(" === UnmarshalYAML: %s", n.Value)
 	s := n.Value
 	b := ldconv.StrToBytesUnsafe(s)
-	if dur, err := time_.ParseDurationByNumber(b); err == nil {
+
+	dur, err := time_.DurationUnmarshalYaml(b)
+	if err == nil {
 		*d.ptr() = dur
-		return nil
 	}
-	dur, err := time.ParseDuration(s)
-	*d.ptr() = dur
+
 	return err
 }

@@ -48,19 +48,30 @@ func durationUnmarshalJsonByStr(b []byte) (time.Duration, error) {
 	return dur, nil
 }
 
+func DurationUnmarshalYaml(b []byte) (time.Duration, error) {
+	// log.Printf(" === UnmarshalYAML: %s", n.Value)
+	if dur, err := ParseDurationByNumber(b); err == nil {
+		return dur, nil
+	}
+	s := unsafe.String(unsafe.SliceData(b), len(b))
+	return time.ParseDuration(s)
+}
+
 func ParseDurationByNumber(b []byte) (time.Duration, error) {
 	return durationUnmarshalJsonByNumber(b)
 }
 func durationUnmarshalJsonByNumber(b []byte) (time.Duration, error) {
 	if b[0] != '0' {
 		str := unsafe.String(unsafe.SliceData(b), len(b))
-		if i64, err := strconv.ParseInt(str, 10, 64); err == nil {
+		i64, err := strconv.ParseInt(str, 10, 64)
+		if err == nil {
 			return time.Second * time.Duration(i64), nil
 		}
 
-		if f, err := strconv.ParseFloat(str, 64); err == nil {
-			r := time.Second * time.Duration(f)
-			r += time.Second * time.Duration(float64(time.Second)*(f-float64(time.Duration(f))))
+		f, err := strconv.ParseFloat(str, 64)
+		if err == nil {
+			// r := time.Second * time.Duration(f)
+			// r += time.Second * time.Duration(float64(time.Second)*(f-float64(time.Duration(f))))
 			return time.Duration(f * float64(time.Second)), nil
 		}
 		return 0, durationUnmarshalJSONError(b)

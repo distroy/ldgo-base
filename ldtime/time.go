@@ -4,10 +4,14 @@
 
 package ldtime
 
-import "time"
+import (
+	"time"
+
+	"github.com/distroy/ldgo-base/internal/time_"
+)
 
 const (
-	layoutDate = "2006-01-02"
+	layoutDate = time_.DateLayout
 )
 
 func divisionTimeNum(num *int64, dividend int64) int {
